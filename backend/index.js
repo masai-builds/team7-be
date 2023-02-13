@@ -1,11 +1,12 @@
 const express= require('express');
 const connection= require("./src/config/db")
 const app = express();
+const cors= require('cors')
 const authRoute = require('./src/controller/user');
 
 app.use(express.urlencoded({ extended:true }));
 app.use(express.json());
-
+app.use(cors())
 
 app.use("/auth",authRoute)
 
@@ -15,9 +16,9 @@ res.send({message:"welcome to our website"})
 })
 
 
-const port = process.env.PORT || 8081;
+ 
 
-app.listen(port,async()=>{
+app.listen( process.env.PORT,async()=>{
     await connection;
 console.log("listening on port 8080")
 });
