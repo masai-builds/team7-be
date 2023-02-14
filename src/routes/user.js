@@ -10,6 +10,8 @@ const handlebars = require("handlebars");
 const fs = require("fs");
 const path = require("path");
 
+// signup //
+
 authRoute.post("/signup", async (req, res) => {
   const userMail = await userModel.findOne({ email: req.body.email });
   const { email, password, rePassword } = req.body;
@@ -75,13 +77,15 @@ authRoute.post("/signup", async (req, res) => {
       if (err) {
         return res.status(500).send({ message: "Error sending email" });
       }
-      return res.status(200).send({ message: "Password reset email sent" });
+      return res.status(200).send({ message: " successfully signup with email" });
     });
     return res
       .status(201)
       .send({ message: "successfully registered", userModel: success._doc });
   });
 });
+
+// login //
 
 authRoute.post("/login", async (req, res) => {
   const { email, password } = req.body;
@@ -109,10 +113,13 @@ authRoute.post("/login", async (req, res) => {
   return res.status(201).send({ validUser, token });
 });
 
-authRoute.post("/resetpassword", async (req, res) => {
+
+// forgetPassword //
+
+authRoute.post("/forgetpassword", async (req, res) => {
   const { email } = req.body;
   const user = await userModel.findOne({ email });
-
+  console.log(user.name)
   if (!user) {
     return res
       .status(401)
@@ -124,7 +131,13 @@ authRoute.post("/resetpassword", async (req, res) => {
     expiresIn: "5m",
   });
 
-  // Set up the email transporter
+// Set up the email transporter
+  const directory = path.join(__dirname, "..", "utiles", "resetPass.html");
+  const fileRead = fs.readFileSync(directory, "utf-8");
+  const template = handlebars.compile(fileRead);
+  const htmlToSend = template({ name: user.name });
+
+  
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -138,8 +151,7 @@ authRoute.post("/resetpassword", async (req, res) => {
     from: process.env.USER_EMAIL,
     to: email,
     subject: "Password Reset Request",
-    html: `<p>You have requested to reset your password. Please click on the link below to reset your password:</p>
-           <p><a href="http://localhost:3000/resetpassword/${user._id}/${resetToken}">Reset Password</a></p>`,
+    html: htmlToSend
   };
 
   // Send the email
