@@ -9,9 +9,25 @@ const jwt = require('jsonwebtoken');
 
 authRoute.post("/signup",async(req,res)=>{
     const userMail= await userModel.findOne({ email: req.body.email})
-    if(userMail){
-        return res.send({ message:"user already registered"})
-    }
+    const {email,password,rePassword} = req.body
+    const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/
+
+  if(userMail){
+    return res.send({ message:"user already registered"})
+  }
+
+  else if (password !== rePassword) {
+    return res.status(400).send({ message: 'Please make sure your passwords match.' })
+  }
+
+  if (!passwordRegex.test(password)) {
+    return res.status(400).send({ message: 'Password must contain at least 8 characters, including at least 1 number, 1 lowercase letter, and 1 uppercase letter.' })
+  }
+
+  if (!emailReg.test(email)) {
+    return res.status(400).send({ message: 'Please provide a valid email address.'})
+  }
 
     const salt=await bcrypt.genSaltSync(10)
     const Pass=await bcrypt.hash(req.body.password,salt)
@@ -30,11 +46,14 @@ authRoute.post("/signup",async(req,res)=>{
 
 authRoute.post("/login", async(req,res)=>{
     const {email,password}=req.body
-    const validUser= await userModel.findOne({email})
+    const validUser= await userModel.findOne({email,password})
     
     if(!validUser){
         return res.status(401).send({message:"Invalid Credentials"})
     }
+    else if(validUser.length < 1){
+      return res.status(401).send({message:"Invalid Credentials"})
+  }
 
     const isMatch = await bcrypt.compare(password, validUser.password)
 
