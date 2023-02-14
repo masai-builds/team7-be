@@ -3,7 +3,7 @@ dotenv.config()
 const Router = require("express")
 const authRoute = Router()
 const bcrypt = require("bcrypt")
-const userModel= require("../models/userModel")
+const userModel= require("../models/userModel.js")
 const nodemailer= require('nodemailer')
 const jwt = require('jsonwebtoken');
 
@@ -23,11 +23,12 @@ authRoute.post("/signup",async(req,res)=>{
         if(err){
             return res.status(500).send({message:"error occured"})
         }
+
         return res.status(201).send({message:"successfully registered",userModel:success._doc})
     })
 })
 
-authRoute.post("/login",async(req,res)=>{
+authRoute.post("/login", async(req,res)=>{
     const {email,password}=req.body
     const validUser= await userModel.findOne({email})
     
@@ -49,7 +50,7 @@ authRoute.post("/login",async(req,res)=>{
 })
 
 
-authRoute.post("/resetpassword",async(req,res)=>{
+authRoute.post("/resetpassword", async(req,res)=>{
     const { email } = req.body;
     const user= await userModel.findOne({email})
 
@@ -66,12 +67,13 @@ authRoute.post("/resetpassword",async(req,res)=>{
     auth: {
       user:process.env.USER_EMAIL,
       pass:process.env.USER_PASS
+    
     }
   });
 
   // Compose the email
   const mailOptions = {
-    from: 'pandasaraswati2001@gmail.com',
+    from: process.env.USER_EMAIL,
     to: email,
     subject: 'Password Reset Request',
     html: `<p>You have requested to reset your password. Please click on the link below to reset your password:</p>
@@ -87,6 +89,9 @@ authRoute.post("/resetpassword",async(req,res)=>{
   });
 
 })
+
+
+
 
 module.exports = authRoute
 
