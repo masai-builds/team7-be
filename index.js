@@ -20,4 +20,5 @@ res.send({message:"welcome to our website"})
 
 app.listen( process.env.PORT,async()=>{
     await connection;
+console.log("listening on port 8080")
 });
