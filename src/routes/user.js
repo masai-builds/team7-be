@@ -10,54 +10,27 @@ const handlebars = require("handlebars");
 const fs = require("fs");
 const path = require("path")
 
-authRoute.post("/signup", async (req, res) => {
-  const userMail = await userModel.findOne({ email: req.body.email });
-  if (userMail) {
-    return res.send({ message: "user already registered" });
+authRoute.post("/signup",async(req,res)=>{
+    const userMail= await userModel.findOne({ email: req.body.email})
+    const {email,password,rePassword} = req.body
+    const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/
+
+  if(userMail){
+    return res.send({ message:"user already registered"})
   }
 
-  const salt = await bcrypt.genSaltSync(10);
-  const Pass = await bcrypt.hash(req.body.password, salt);
-  const rePass = await bcrypt.hash(req.body.rePassword, salt);
+  else if (password !== rePassword) {
+    return res.status(400).send({ message: 'Please make sure your passwords match.' })
+  }
 
-  const user = new userModel({
-    ...req.body,
-    password: Pass,
-    rePassword: rePass,
-  });
+  if (!passwordRegex.test(password)) {
+    return res.status(400).send({ message: 'Password must contain at least 8 characters, including at least 1 number, 1 lowercase letter, and 1 uppercase letter.' })
+  }
 
-  user.save((err, success) => {
-    if (err) {
-      return res.status(500).send({ message: "error occured" });
-    }
-    const dir = path.join(__dirname, ".." ,"utiles", "successEmail.html")
-    const source = fs.readFileSync(dir, "utf-8") ;
-    const template = handlebars.compile(source) ;
-    const htmlToSend = template({name :req.body.name})
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.USER_EMAIL,
-        pass: process.env.USER_PASS,
-      },
-    });
-    const mailOptions = {
-      from: process.env.USER_EMAIL,
-      to: req.body.email,
-      subject: `Welcome to Masai Placement Portal`,
-      html: htmlToSend
-    };
-    transporter.sendMail(mailOptions, (err, info) => {
-      if (err) {
-        return res.status(500).send({ message: "Error sending email" });
-      }
-      return res.status(200).send({ message: "Password reset email sent" });
-    });
-    return res
-      .status(201)
-      .send({ message: "successfully registered", userModel: success._doc });
-  });
-});
+  if (!emailReg.test(email)) {
+    return res.status(400).send({ message: 'Please provide a valid email address.'})
+  }
 
 authRoute.post("/login", async (req, res) => {
   const { email, password } = req.body;
@@ -69,8 +42,15 @@ authRoute.post("/login", async (req, res) => {
 
   const isMatch = await bcrypt.compare(password, validUser.password);
 
-  if (!isMatch) {
-    return res.status(401).send({ message: "Invalid Credentials" });
+authRoute.post("/login", async(req,res)=>{
+    const {email,password}=req.body
+    const validUser= await userModel.findOne({email,password})
+    
+    if(!validUser){
+        return res.status(401).send({message:"Invalid Credentials"})
+    }
+    else if(validUser.length < 1){
+      return res.status(401).send({message:"Invalid Credentials"})
   }
 
   const token = jwt.sign(
@@ -125,4 +105,4 @@ authRoute.post("/resetpassword", async (req, res) => {
   });
 });
 
-module.exports = authRoute;
+module.exports = authRoute ;
