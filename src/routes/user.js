@@ -90,7 +90,7 @@ authRoute.post("/signup", async (req, res) => {
 authRoute.post("/login", async (req, res) => {
   const { email, password } = req.body;
   const validUser = await userModel.findOne({ email, password });
-  console.log(validUser) ;
+
   if (!validUser) {
     return res.status(401).send({ message: "Invalid Credentials" });
   } else if (validUser.length < 1) {
