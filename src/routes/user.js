@@ -72,7 +72,7 @@ authRoute.post("/signup", async (req, res) => {
       subject: "Signup Successfully",
       html: htmlToSend,
     };
-
+         
     transporter.sendMail(mailOptions, (err, info) => {
       if (err) {
         return res.status(500).send({ message: "Error sending email" });
