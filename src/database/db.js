@@ -5,7 +5,7 @@ mongoose.set("strictQuery", false);
 const db = process.env.DATABASE; 
 
 
-const connection = mongoose.connect("mongodb+srv://masai-portal:masai-portal@cluster0.syawzk7.mongodb.net/masai-portal?retryWrites=true&w=majority")
+const connection = mongoose.connect(db)
   .then(() => console.log("Database successfully connect"))
   .catch((e) => console.log(e));
 
