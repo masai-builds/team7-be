@@ -11,7 +11,7 @@ app.use(express.json());
 app.use(cors());
 
 app.use("/auth", authRoute);
-app.use("/newCompany", companyRoute) ;
+app.use("/", companyRoute) ;
 
 app.get("/", (req, res) => {
   res.send({ message: "welcome to our website" });
