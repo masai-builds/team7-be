@@ -10,14 +10,48 @@ const handlebars = require("handlebars");
 const fs = require("fs");
 const path = require("path");
 
-
+/**
+ * @swagger
+ * components:
+ *      schema :
+ *         signup :
+ *                   type : object
+ *                   properties :
+ *                      name :
+ *                             type :  string
+ *                      email :
+ *                             type :  string
+ *                      password :
+ *                             type :  string
+ *                      rePassword :
+ *                              type :  string
+ *                      role :
+ *                              type :  string
+ *                      captcha :
+ *                            type :  string
+ * 
+ *         login : 
+ *                  type : object
+ *                  properties : 
+ *                      email : 
+ *                             type : string
+ *                      password : 
+ *                             type : string
+ *                     
+ */
 
 /**
  * @swagger
- * auth/signup:
+ * /auth/signup:
  *   post:
  *     summary: user sign up post data
  *     description: user create account 
+ *     requestBody : 
+ *             required : true
+ *             content : 
+ *                  application/json : 
+ *                           schema : 
+ *                              $ref : "#/components/schema/signup"
  *     responses:
  *       200:
  *         description: after successful create account 
@@ -105,10 +139,16 @@ authRoute.post("/signup", async (req, res) => {
 /**
  * @swagger
  * 
- * auth/login:
+ * /auth/login:
  *   post:
  *     summary: user login with register email password
  *     description: user Login  
+ *     requestBody : 
+ *          required : true 
+ *          content : 
+ *             application/json : 
+ *                 schema : 
+ *                     $ref : "#/components/schema/login"
  *     responses:
  *       200:
  *         description: after successful login
@@ -167,10 +207,19 @@ authRoute.post("/login", async (req, res, next) => {
 // forgetPassword //
 /**
  * @swagger
- * auth/forgetpassword:
+ * /auth/forgetpassword:
  *   post:
  *     summary: user can reset or change password
  *     description: user forget password
+ *     requestBody : 
+ *           required : true 
+ *           content : 
+ *               application/json : 
+ *                  schema : 
+ *                   type : object
+ *                   properties : 
+ *                     email : 
+ *                        type : string 
  *     responses:
  *       200:
  *         description: after successful change password
@@ -184,7 +233,7 @@ authRoute.post("/login", async (req, res, next) => {
 authRoute.post("/forgetpassword", async (req, res) => {
   const { email } = req.body;
   const user = await userModel.findOne({ email });
-
+  
   if (!user) {
     return res
       .status(401)

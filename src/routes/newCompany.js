@@ -215,7 +215,6 @@ companyRoute.post("/createCompany", async (req, res) => {
 companyRoute.patch("/editCompany/:id", async (req, res) => {
   const { id } = req.params;
   const { companyName, websiteUrl } = req.body;
-
   const properNameFormat = properName(companyName);
   if (!validUrl(websiteUrl)) {
     return res.status(401).send({ meassge: "please enter valid company url" });
