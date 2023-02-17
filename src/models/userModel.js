@@ -5,7 +5,7 @@ const userSchema = mongoose.Schema({
     email: String,
     password:String,
     rePassword:String,
-    role:{type:String,enum:["admin", "student"]},
+    role:{type:String,enum:["Admin", "Student"]},
     captcha:String,
 })
 
