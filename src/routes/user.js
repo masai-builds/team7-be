@@ -179,7 +179,7 @@ authRoute.post("/forgetPassword", async (req, res) => {
 
 //reset password 
 
-authRoute.post("/resetPassword/:id/:token",async(req,res)=>{
+authRoute.patch("/resetPassword/:id",async(req,res)=>{
   const { id, token } = req.params;
   const { password } = req.body;
 
