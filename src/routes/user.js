@@ -10,11 +10,29 @@ const handlebars = require("handlebars");
 const fs = require("fs");
 const path = require("path");
 
-// signup
 
+
+/**
+ * @swagger
+ * auth/signup:
+ *   post:
+ *     summary: user sign up post data
+ *     description: user create account 
+ *     responses:
+ *       200:
+ *         description: after successful create account 
+ *       401:
+ *          description: data not appropriate 
+ *       501 : 
+ *            description: Internet server problem
+ * 
+ */
+
+// signup //
 authRoute.post("/signup", async (req, res) => {
   const userMail = await userModel.findOne({ email: req.body.email });
   const { email, password, rePassword } = req.body;
+ 
   const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/;
 
@@ -42,7 +60,7 @@ authRoute.post("/signup", async (req, res) => {
   const salt = await bcrypt.genSaltSync(10);
   const Pass = await bcrypt.hash(req.body.password, salt);
   const rePass = await bcrypt.hash(req.body.rePassword, salt);
-
+ 
   const user = new userModel({
     ...req.body,
     password: Pass,
@@ -70,7 +88,7 @@ authRoute.post("/signup", async (req, res) => {
       subject: "Signup Successfully",
       html: htmlToSend,
     };
-
+         
     transporter.sendMail(mailOptions, (err, info) => {
       if (err) {
         return res.status(500).send({ message: "Error sending email" });
@@ -83,14 +101,30 @@ authRoute.post("/signup", async (req, res) => {
   });
 });
 
-// login
+// login //
+/**
+ * @swagger
+ * 
+ * auth/login:
+ *   post:
+ *     summary: user login with register email password
+ *     description: user Login  
+ *     responses:
+ *       200:
+ *         description: after successful login
+ *       401:
+ *          description: check user email password 
+ *       501 : 
+ *            description: Internet server problem
+ * 
+ */
 
 authRoute.post("/login", async (req, res, next) => {
   const { email, password } = req.body;
   const validUser = await userModel.findOne({ email });
 
   if (!email || !password) {
-    res.status(422).send({ message: "fill all the details" });
+   return res.status(422).send({ message: "fill all the details" })
   }
 
   if (!validUser) {
@@ -104,11 +138,11 @@ authRoute.post("/login", async (req, res, next) => {
   }
 
   // authorize based on user role
-  const authorizedRoles = ["Admin", "Student"];
-  if (authorizedRoles.length && !authorizedRoles.includes(validUser.role)) {
-    // user's role is not authorized
-    return res.status(401).json({ message: "Unauthorized" });
-  }
+  const authorizedRoles = ["Admin", "Student"]; 
+    if (authorizedRoles.length && !authorizedRoles.includes(validUser.role)) {
+       
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
 
   const token = jwt.sign(
     {
@@ -124,13 +158,30 @@ authRoute.post("/login", async (req, res, next) => {
   });
 
   // authentication and authorization successful
-  next();
+  // next();
   return res.status(201).send({ validUser, token });
 });
 
 // forgetPassword
 
-authRoute.post("/forgetPassword", async (req, res) => {
+// forgetPassword //
+/**
+ * @swagger
+ * auth/forgetpassword:
+ *   post:
+ *     summary: user can reset or change password
+ *     description: user forget password
+ *     responses:
+ *       200:
+ *         description: after successful change password
+ *       401:
+ *          description: check user validation 
+ *       501 : 
+ *            description: Internet server problem
+ *  
+ */
+
+authRoute.post("/forgetpassword", async (req, res) => {
   const { email } = req.body;
   const user = await userModel.findOne({ email });
 
@@ -145,12 +196,11 @@ authRoute.post("/forgetPassword", async (req, res) => {
     expiresIn: "15m",
   });
 
-  // Set up the email transporter
-
-  const directory = path.join(__dirname, "..", "utiles", "resetPassowrd.html");
+// Set up the email transporter
+  const directory = path.join(__dirname, "..", "utiles", "resetPassword.html");
   const fileRead = fs.readFileSync(directory, "utf-8");
   const template = handlebars.compile(fileRead);
-  const htmlToSend = template({ name: user.name, userId: user._id });
+  const htmlToSend = template({ name: user.name, userId : user._id });
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
