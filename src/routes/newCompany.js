@@ -79,13 +79,40 @@ companyRoute.get("/getCompany", async (req, res) => {
   const getCompanyData = await companyData.find({});
   return res.send(getCompanyData);
 });
+/**
+ * @swagger
+ * /singleCompany:
+ *   get:
+ *     summary: Get a single company with respect to query
+ *     description: Get a single company with respect to query
+ *     parameters :
+ *          - in: query
+ *            name: companyName
+ *            schema:
+ *                type: string
+ *     responses:
+ *       200:
+ *         description: Successfully get a single company with respect to query
+ *       401:
+ *          description: data not appropriate
+ *       501 :
+ *            description: Internet server problem
+ *
+ */
 
 companyRoute.get("/singleCompany", async (req, res) => {
   const { companyName } = req.query;
+  
   const properNameFormat = properName(companyName) ;
-  const getCompany = await companyData.find({companyName : properNameFormat});
-  getCompany
-  res.status(201).send(getCompany);
+  console.log(properNameFormat)
+  const getCompany = await companyData.find({companyName : properNameFormat})
+  if(getCompany.length <= 0){
+    return res.status(401).send({message : "dont have such company or check company name" })
+  }
+   
+    return res.status(201).send(getCompany);
+ 
+  
 });
 
 // CreateNewCompany details //

@@ -62,7 +62,7 @@ authRoute.post("/signup", async (req, res) => {
   const salt = await bcrypt.genSaltSync(10);
   const Pass = await bcrypt.hash(req.body.password, salt);
   const rePass = await bcrypt.hash(req.body.rePassword, salt);
-  console.log(req.body, Pass, rePass)
+ 
   const user = new userModel({
     ...req.body,
     password: Pass,
