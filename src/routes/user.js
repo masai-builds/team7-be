@@ -237,6 +237,9 @@ authRoute.patch("/resetPassword/:id", async (req, res) => {
   if (!oldUser) {
     return res.json({ status: "User Not Exists!!" });
   }
+  if(password !== rePassword ) {
+    return res.status(401).send({meassge : "Password not same "})
+  }
   try {
     const salt = await bcrypt.genSaltSync(10);
     const Pass = await bcrypt.hash(password, salt);
