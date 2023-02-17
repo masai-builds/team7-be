@@ -26,11 +26,6 @@ positionRoute.post("/newPosition",async(req,res)=>{
         res.status(400).send({ message: "Invalid input data types" });
     }
 
-    const existingPosition = await posModel.findOne({ id });
-    if (existingPosition) {
-    res.status(409).send({ message: "Position with this ID already exists" });
-    }
-
     if (!req.user.isAdmin) {
         res.status(401).send({ message: "Unauthorized access" });
     }
