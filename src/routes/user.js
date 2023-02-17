@@ -10,8 +10,25 @@ const handlebars = require("handlebars");
 const fs = require("fs");
 const path = require("path");
 
-// signup //
 
+
+/**
+ * @swagger
+ * auth/signup:
+ *   post:
+ *     summary: user sign up post data
+ *     description: user create account 
+ *     responses:
+ *       200:
+ *         description: after successful create account 
+ *       401:
+ *          description: data not appropriate 
+ *       501 : 
+ *            description: Internet server problem
+ * 
+ */
+
+// signup //
 authRoute.post("/signup", async (req, res) => {
   const userMail = await userModel.findOne({ email: req.body.email });
   const { email, password, rePassword } = req.body;
@@ -86,6 +103,22 @@ authRoute.post("/signup", async (req, res) => {
 });
 
 // login //
+/**
+ * @swagger
+ * 
+ * auth/login:
+ *   post:
+ *     summary: user login with register email password
+ *     description: user Login  
+ *     responses:
+ *       200:
+ *         description: after successful login
+ *       401:
+ *          description: check user email password 
+ *       501 : 
+ *            description: Internet server problem
+ * 
+ */
 
 authRoute.post("/login", async (req, res) => {
   const { email, password } = req.body;
@@ -115,6 +148,21 @@ authRoute.post("/login", async (req, res) => {
 
 
 // forgetPassword //
+/**
+ * @swagger
+ * auth/forgetpassword:
+ *   post:
+ *     summary: user can reset or change password
+ *     description: user forget password
+ *     responses:
+ *       200:
+ *         description: after successful change password
+ *       401:
+ *          description: check user validation 
+ *       501 : 
+ *            description: Internet server problem
+ *  
+ */
 
 authRoute.post("/forgetpassword", async (req, res) => {
   const { email } = req.body;

@@ -5,11 +5,16 @@ const cors = require("cors");
 const authRoute = require("./src/routes/user");
 const companyRoute = require("./src/routes/newCompany")
 const dotenv = require("dotenv");
+const swaggerUi = require('swagger-ui-express') ;
+const swaggerSpec = require("./swagger") ;
+
 dotenv.config({ path: "./src/config/.env" });
+
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cors());
-
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 app.use("/auth", authRoute);
 app.use("/", companyRoute) ;
 
