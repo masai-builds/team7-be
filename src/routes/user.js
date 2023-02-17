@@ -32,6 +32,7 @@ const path = require("path");
 authRoute.post("/signup", async (req, res) => {
   const userMail = await userModel.findOne({ email: req.body.email });
   const { email, password, rePassword } = req.body;
+ 
   const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/;
 
@@ -61,7 +62,7 @@ authRoute.post("/signup", async (req, res) => {
   const salt = await bcrypt.genSaltSync(10);
   const Pass = await bcrypt.hash(req.body.password, salt);
   const rePass = await bcrypt.hash(req.body.rePassword, salt);
-
+  console.log(req.body, Pass, rePass)
   const user = new userModel({
     ...req.body,
     password: Pass,
@@ -72,7 +73,7 @@ authRoute.post("/signup", async (req, res) => {
     if (err) {
       return res.status(500).send({ message: "error occured" });
     }
-    const directory = path.join(__dirname, "..", "utiles", "successEmail.html");
+    const directory = path.join(__dirname, "..", "utiles", "signupEmail.html");
     const fileRead = fs.readFileSync(directory, "utf-8");
     const template = handlebars.compile(fileRead);
     const htmlToSend = template({ name: req.body.name });
@@ -176,14 +177,14 @@ authRoute.post("/forgetpassword", async (req, res) => {
 
   // Generate a password reset token and expiry time
   const resetToken = jwt.sign({ userId: user._id }, "Secret", {
-    expiresIn: "5m",
+    expiresIn: "15m",
   });
 
 // Set up the email transporter
-  const directory = path.join(__dirname, "..", "utiles", "resetPass.html");
+  const directory = path.join(__dirname, "..", "utiles", "resetPassword.html");
   const fileRead = fs.readFileSync(directory, "utf-8");
   const template = handlebars.compile(fileRead);
-  const htmlToSend = template({ name: user.name });
+  const htmlToSend = template({ name: user.name, userId : user._id });
 
   
   const transporter = nodemailer.createTransport({

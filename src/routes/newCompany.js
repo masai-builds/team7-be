@@ -21,7 +21,12 @@ function validUrl(url) {
 
   return urlPattern.test(url);
 }
-
+// proper name format //
+function properName(companyName) {
+  return companyName.replace(/\w\S*/g, function (txt) {
+    return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+  });
+}
 //swaggerSchema //
 /**
  * @swagger
@@ -75,6 +80,14 @@ companyRoute.get("/getCompany", async (req, res) => {
   return res.send(getCompanyData);
 });
 
+companyRoute.get("/singleCompany", async (req, res) => {
+  const { companyName } = req.query;
+  const properNameFormat = properName(companyName) ;
+  const getCompany = await companyData.find({companyName : properNameFormat});
+  getCompany
+  res.status(201).send(getCompany);
+});
+
 // CreateNewCompany details //
 /**
  * @swagger
@@ -126,12 +139,20 @@ companyRoute.post("/createCompany", async (req, res) => {
   if (!validUrl(websiteUrl)) {
     return res.status(401).send({ meassge: "please enter valid company url" });
   }
-  new companyData(req.body).save((err, success) => {
-    if (err) {
-      return res.status(401).send({ message: "data not save in database" });
+  
+
+  const toTitleCase = properName(companyName);
+  
+  new companyData({ ...req.body, companyName: toTitleCase }).save(
+    (err, success) => {
+      if (err) {
+        return res.status(401).send({ message: "data not save in database" });
+      }
+      return res
+        .status(201)
+        .send({ message: "New company added successfully " });
     }
-    return res.status(201).send({ message: "New company added successfully " });
-  });
+  );
 });
 
 // upadte company details //
