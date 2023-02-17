@@ -1,4 +1,5 @@
 const dotenv = require("dotenv");
+
 dotenv.config();
 
 const Router = require("express");
@@ -104,15 +105,25 @@ companyRoute.get("/singleCompany", async (req, res) => {
   const { companyName } = req.query;
 
   const properNameFormat = properName(companyName);
-  console.log(properNameFormat);
-  const getCompany = await companyData.find({ companyName: properNameFormat });
-  if (getCompany.length <= 0) {
-    return res
-      .status(401)
-      .send({ message: "dont have such company or check company name" });
+  const queryObj = {};
+  if (properNameFormat) {
+    queryObj.companyName = { $regex: properNameFormat, $options: "i" };
   }
 
-  return res.status(201).send(getCompany);
+  await companyData.find(queryObj).exec((err, items) => {
+    if (err) {
+      return res.status(500).send({ meassge: "searching error", err });
+    }
+    if (items.length <= 0) {
+      return res.status(401).send({ message: "no comapny available or once check company name" });
+    }
+    return res.status(201).send(items);
+  });
+  // if (getCompany.length <= 0) {
+  //   return res
+  //     .status(401)
+  //     .send({ message: "dont have such company or check company name" });
+  // }
 });
 
 // CreateNewCompany details //
@@ -176,7 +187,7 @@ companyRoute.post("/createCompany", async (req, res) => {
       }
       return res
         .status(201)
-        .send({ message: "New company added successfully " });
+        .send({ message: "New company added successfully" });
     }
   );
 });
