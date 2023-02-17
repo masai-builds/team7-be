@@ -10,7 +10,7 @@ const handlebars = require("handlebars");
 const fs = require("fs");
 const path = require("path");
 
-// signup //
+// signup 
 
 authRoute.post("/signup", async (req, res) => {
   const userMail = await userModel.findOne({ email: req.body.email });
@@ -85,17 +85,19 @@ authRoute.post("/signup", async (req, res) => {
   });
 });
 
-// login //
+// login 
 
-authRoute.post("/login", async (req, res) => {
+authRoute.post("/login", async (req, res,next) => {
   const { email, password } = req.body;
-  const validUser = await userModel.findOne({ email, password });
+  const validUser = await userModel.findOne({ email });
+
+  if (!email || !password) {
+    res.status(422).send({ message: "fill all the details" })
+  }
 
   if (!validUser) {
     return res.status(401).send({ message: "Invalid Credentials" });
-  } else if (validUser.length < 1) {
-    return res.status(401).send({ message: "Invalid Credentials" });
-  }
+  } 
 
   const isMatch = await bcrypt.compare(password, validUser.password);
 
@@ -103,23 +105,35 @@ authRoute.post("/login", async (req, res) => {
     return res.status(401).send({ message: "Invalid Credentials" });
   }
 
-  const token = jwt.sign(
-    {
-      name: validUser.name,
-    },
-    process.env.JWT_KEY
-  );
+  // authorize based on user role
+  const authorizedRoles = ["Admin", "Student"]; 
+    if (authorizedRoles.length && !authorizedRoles.includes(validUser.role)) {
+        // user's role is not authorized
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
 
+  const token = jwt.sign({
+      name: validUser.name,
+    }, process.env.JWT_KEY);
+
+    // cookiegenerate
+    res.cookie("usercookie",token,{
+        expires:new Date(Date.now()+9000000),
+        httpOnly:true
+    });
+
+  // authentication and authorization successful
+  next();
   return res.status(201).send({ validUser, token });
+   
 });
 
+// forgetPassword 
 
-// forgetPassword //
-
-authRoute.post("/forgetpassword", async (req, res) => {
+authRoute.post("/forgetPassword", async (req, res) => {
   const { email } = req.body;
   const user = await userModel.findOne({ email });
- 
+
   if (!user) {
     return res
       .status(401)
@@ -128,7 +142,7 @@ authRoute.post("/forgetpassword", async (req, res) => {
 
   // Generate a password reset token and expiry time
   const resetToken = jwt.sign({ userId: user._id }, "Secret", {
-    expiresIn: "5m",
+    expiresIn: "15m",
   });
 
 // Set up the email transporter
@@ -162,5 +176,30 @@ authRoute.post("/forgetpassword", async (req, res) => {
     return res.status(200).send({ message: "Password reset email sent" });
   });
 });
+
+//reset password 
+
+authRoute.post("/resetPassword/:id",async(req,res)=>{
+  const { id, token } = req.params;
+  const { password } = req.body;
+
+  const oldUser = await User.findOne({ _id: id });
+  if (!oldUser) {
+    return res.json({ status: "User Not Exists!!" });
+  }
+
+  const secret = process.env.JWT_KEY + oldUser.password;
+  try {
+    const verify = jwt.verify(token, secret);
+    const encryptedPassword = await bcrypt.hash(password, 10);
+
+    await User.updateOne({_id: id,},{$set: { password: encryptedPassword}});
+    res.render("index", { email: verify.email, status: "verified" });
+    
+  } catch (error) {
+    console.log(error);
+    res.json({ status: "Something Went Wrong" });
+  }
+})
 
 module.exports = authRoute;
