@@ -180,21 +180,21 @@ authRoute.post("/forgetPassword", async (req, res) => {
 //reset password 
 
 authRoute.patch("/resetPassword/:id",async(req,res)=>{
-  const { id, token } = req.params;
-  const { password } = req.body;
+  const { id } = req.params;
+  const { password,rePassword } = req.body;
 
-  const oldUser = await User.findOne({ _id: id });
+  const oldUser = await userModel.findOne({ id });
   if (!oldUser) {
     return res.json({ status: "User Not Exists!!" });
   }
-
-  const secret = process.env.JWT_KEY + oldUser.password;
   try {
-    const verify = jwt.verify(token, secret);
-    const encryptedPassword = await bcrypt.hash(password, 10);
+  const salt = await bcrypt.genSaltSync(10);
+  const Pass = await bcrypt.hash(password, salt);
+  const rePass = await bcrypt.hash(rePassword, salt);
 
-    await User.updateOne({_id: id,},{$set: { password: encryptedPassword}});
-    res.render("index", { email: verify.email, status: "verified" });
+  const setNewPass =  await userModel.findByIdAndUpdate({ id,},{$set: { password: Pass , rePassword:rePass}});
+  setNewPass.save();
+    res.status(201).send({message: 'Password updated successfully'});
     
   } catch (error) {
     console.log(error);
