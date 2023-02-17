@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 require('dotenv').config({ path: ".env" });
+mongoose.set('strictQuery', false);
 
 const url=process.env.DATABASE
 const connection = mongoose.connect(url)

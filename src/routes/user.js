@@ -10,7 +10,10 @@ const handlebars = require("handlebars");
 const fs = require("fs");
 const path = require("path");
 
+
+
 // signup
+
 
 authRoute.post("/signup", async (req, res) => {
   const userMail = await userModel.findOne({ email: req.body.email });
