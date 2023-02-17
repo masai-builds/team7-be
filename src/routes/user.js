@@ -92,7 +92,7 @@ authRoute.post("/login", async (req, res,next) => {
   const validUser = await userModel.findOne({ email });
 
   if (!email || !password) {
-    res.status(422).send({ message: "fill all the details" })
+   return res.status(422).send({ message: "fill all the details" })
   }
 
   if (!validUser) {
@@ -108,7 +108,7 @@ authRoute.post("/login", async (req, res,next) => {
   // authorize based on user role
   const authorizedRoles = ["Admin", "Student"]; 
     if (authorizedRoles.length && !authorizedRoles.includes(validUser.role)) {
-        // user's role is not authorized
+       
         return res.status(401).json({ message: 'Unauthorized' });
     }
 
@@ -123,7 +123,7 @@ authRoute.post("/login", async (req, res,next) => {
     });
 
   // authentication and authorization successful
-  next();
+  // next();
   return res.status(201).send({ validUser, token });
    
 });
@@ -183,8 +183,8 @@ authRoute.post("/forgetPassword", async (req, res) => {
 authRoute.patch("/resetPassword/:id",async(req,res)=>{
   const { id, token } = req.params;
   const { password } = req.body;
-
-  const oldUser = await User.findOne({ _id: id });
+  
+  const oldUser = await userModel.findOne({ _id: id });
   if (!oldUser) {
     return res.json({ status: "User Not Exists!!" });
   }
