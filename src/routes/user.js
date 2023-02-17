@@ -55,7 +55,7 @@ authRoute.post("/signup", async (req, res) => {
     if (err) {
       return res.status(500).send({ message: "error occured" });
     }
-    const directory = path.join(__dirname, "..", "utiles", "successEmail.html");
+    const directory = path.join(__dirname, "..", "utiles", "signupEmail.html");
     const fileRead = fs.readFileSync(directory, "utf-8");
     const template = handlebars.compile(fileRead);
     const htmlToSend = template({ name: req.body.name });
@@ -81,7 +81,7 @@ authRoute.post("/signup", async (req, res) => {
     });
     return res
       .status(201)
-      .send({ message: "successfully registered", userModel: success._doc });
+      .send({ message: "successfully registered"});
   });
 });
 
@@ -119,7 +119,7 @@ authRoute.post("/login", async (req, res) => {
 authRoute.post("/forgetpassword", async (req, res) => {
   const { email } = req.body;
   const user = await userModel.findOne({ email });
-  console.log(user.name)
+ 
   if (!user) {
     return res
       .status(401)
@@ -132,10 +132,10 @@ authRoute.post("/forgetpassword", async (req, res) => {
   });
 
 // Set up the email transporter
-  const directory = path.join(__dirname, "..", "utiles", "resetPass.html");
+  const directory = path.join(__dirname, "..", "utiles", "resetPassword.html");
   const fileRead = fs.readFileSync(directory, "utf-8");
   const template = handlebars.compile(fileRead);
-  const htmlToSend = template({ name: user.name });
+  const htmlToSend = template({ name: user.name, userId : user._id });
 
   
   const transporter = nodemailer.createTransport({
