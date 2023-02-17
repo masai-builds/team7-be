@@ -162,7 +162,7 @@ authRoute.post("/login", async (req, res, next) => {
   return res.status(201).send({ validUser, token });
 });
 
-// forgetPassword
+
 
 // forgetPassword //
 /**
