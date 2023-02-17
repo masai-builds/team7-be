@@ -87,7 +87,7 @@ authRoute.post("/signup", async (req, res) => {
 
 // login 
 
-authRoute.post("/login", async (req, res) => {
+authRoute.post("/login", async (req, res,next) => {
   const { email, password } = req.body;
   const validUser = await userModel.findOne({ email });
 
@@ -105,6 +105,13 @@ authRoute.post("/login", async (req, res) => {
     return res.status(401).send({ message: "Invalid Credentials" });
   }
 
+  // authorize based on user role
+  const authorizedRoles = ["Admin", "Student"]; 
+    if (authorizedRoles.length && !authorizedRoles.includes(validUser.role)) {
+        // user's role is not authorized
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+
   const token = jwt.sign({
       name: validUser.name,
     }, process.env.JWT_KEY);
@@ -115,7 +122,10 @@ authRoute.post("/login", async (req, res) => {
         httpOnly:true
     });
 
+  // authentication and authorization successful
+  next();
   return res.status(201).send({ validUser, token });
+   
 });
 
 // forgetPassword 
@@ -177,14 +187,15 @@ authRoute.post("/resetPassword/:id/:token",async(req,res)=>{
   if (!oldUser) {
     return res.json({ status: "User Not Exists!!" });
   }
+
   const secret = process.env.JWT_KEY + oldUser.password;
   try {
     const verify = jwt.verify(token, secret);
     const encryptedPassword = await bcrypt.hash(password, 10);
-    await User.updateOne({_id: id,},{
-        $set: { password: encryptedPassword}});
 
+    await User.updateOne({_id: id,},{$set: { password: encryptedPassword}});
     res.render("index", { email: verify.email, status: "verified" });
+    
   } catch (error) {
     console.log(error);
     res.json({ status: "Something Went Wrong" });
