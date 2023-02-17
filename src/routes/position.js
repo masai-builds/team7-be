@@ -14,11 +14,11 @@ positionRoute.get('/:_id', async(req,res)=>{
 })
 
 positionRoute.post("/newPosition",async(req,res)=>{
-    const { id,title,category,applicationProcess,openings,minSalary,maxSalary,
+    const {title,category,applicationProcess,openings,minSalary,maxSalary,
         locations,rounds,workingMode,relocation,bond,additionalCriteria
      } = req.body;
 
-    if (!id || !title || !category || !applicationProcess || !openings || !minSalary || !maxSalary || !locations || !rounds || !workingMode || !maxSalary || !relocation || !bond || !additionalCriteria ) {
+    if ( !title || !category || !applicationProcess || !openings || !minSalary || !maxSalary || !locations || !rounds || !workingMode || !maxSalary || !relocation || !bond || !additionalCriteria ) {
         res.status(401).send({ message: "fill all the details" })
     }
 
@@ -26,14 +26,9 @@ positionRoute.post("/newPosition",async(req,res)=>{
         res.status(400).send({ message: "Invalid input data types" });
     }
 
-    const existingPosition = await posModel.findOne({ id });
-    if (existingPosition) {
-    res.status(409).send({ message: "Position with this ID already exists" });
-    }
-
-    if (!req.user.isAdmin) {
-        res.status(401).send({ message: "Unauthorized access" });
-    }
+    // if (!req.user.isAdmin) {
+    //     res.status(401).send({ message: "Unauthorized access" });
+    // }
 
     let request= req.body
     const Data= await posModel.create(request)
