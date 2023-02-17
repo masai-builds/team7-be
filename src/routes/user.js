@@ -147,7 +147,7 @@ authRoute.post("/forgetPassword", async (req, res) => {
 
 // Set up the email transporter 
 
-  const directory = path.join(__dirname, "..", "utiles", "resetPassowrd.html");
+  const directory = path.join(__dirname, "..", "utiles", "resetPassword.html");
   const fileRead = fs.readFileSync(directory, "utf-8");
   const template = handlebars.compile(fileRead);
   const htmlToSend = template({ name: user.name, userId : user._id });
