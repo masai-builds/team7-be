@@ -183,8 +183,9 @@ authRoute.post("/forgetPassword", async (req, res) => {
 authRoute.patch("/resetPassword/:id",async(req,res)=>{
   const { id } = req.params;
   const { password,rePassword } = req.body;
+ 
 
-  const oldUser = await userModel.findOne({ id });
+  const oldUser = await userModel.findOne({ _id : id });
   if (!oldUser) {
     return res.json({ status: "User Not Exists!!" });
   }
@@ -193,12 +194,12 @@ authRoute.patch("/resetPassword/:id",async(req,res)=>{
   const Pass = await bcrypt.hash(password, salt);
   const rePass = await bcrypt.hash(rePassword, salt);
 
-  const setNewPass =  await userModel.findByIdAndUpdate({ id,},{$set: { password: Pass , rePassword:rePass}});
+  const setNewPass =  await userModel.findByIdAndUpdate({ _id: id},{$set: { password: Pass , rePassword:rePass}});
   setNewPass.save();
     res.status(201).send({message: 'Password updated successfully'});
     
   } catch (error) {
-    console.log(error);
+    
     res.json({ status: "Something Went Wrong" });
   }
 })
