@@ -102,17 +102,17 @@ companyRoute.get("/getCompany", async (req, res) => {
 
 companyRoute.get("/singleCompany", async (req, res) => {
   const { companyName } = req.query;
-  
-  const properNameFormat = properName(companyName) ;
-  console.log(properNameFormat)
-  const getCompany = await companyData.find({companyName : properNameFormat})
-  if(getCompany.length <= 0){
-    return res.status(401).send({message : "dont have such company or check company name" })
+
+  const properNameFormat = properName(companyName);
+  console.log(properNameFormat);
+  const getCompany = await companyData.find({ companyName: properNameFormat });
+  if (getCompany.length <= 0) {
+    return res
+      .status(401)
+      .send({ message: "dont have such company or check company name" });
   }
-   
-    return res.status(201).send(getCompany);
- 
-  
+
+  return res.status(201).send(getCompany);
 });
 
 // CreateNewCompany details //
@@ -166,10 +166,9 @@ companyRoute.post("/createCompany", async (req, res) => {
   if (!validUrl(websiteUrl)) {
     return res.status(401).send({ meassge: "please enter valid company url" });
   }
-  
 
   const toTitleCase = properName(companyName);
-  
+
   new companyData({ ...req.body, companyName: toTitleCase }).save(
     (err, success) => {
       if (err) {
@@ -215,9 +214,14 @@ companyRoute.post("/createCompany", async (req, res) => {
  */
 companyRoute.patch("/editCompany/:id", async (req, res) => {
   const { id } = req.params;
+  const { companyName, websiteUrl } = req.body;
 
+  const properNameFormat = properName(companyName);
+  if (!validUrl(websiteUrl)) {
+    return res.status(401).send({ meassge: "please enter valid company url" });
+  }
   await companyData
-    .updateMany({ _id: id }, req.body)
+    .updateMany({ _id: id }, { ...req.body, companyName: properNameFormat })
     .then(() => {
       res.status(201).send({ message: "Details successfully edit" });
     })
