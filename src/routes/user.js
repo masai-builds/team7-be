@@ -72,10 +72,9 @@ authRoute.post("/signup", async (req, res) => {
 
   if (userMail) {
     return res.send({ message: "user already registered" });
-  } else if (password !== rePassword) {
-    return res
-      .status(400)
-      .send({ message: "Please make sure your passwords match." });
+  }
+   if (password !== rePassword) {
+    return res.status(400) .send({ message: "Please make sure your passwords match." });
   }
 
   if (!passwordRegex.test(password)) {
@@ -135,6 +134,12 @@ authRoute.post("/signup", async (req, res) => {
   });
 });
 
+// //email confirmation
+
+// authRoute.patch('/emailConfirmation',  async(req, res) => {
+//   const {emailConfirmed} 
+// })
+
 // login //
 /**
  * @swagger
@@ -171,6 +176,10 @@ authRoute.post("/login", async (req, res, next) => {
     return res.status(401).send({ message: "Invalid Credentials" });
   }
 
+  if (!validUser.emailConfirmed) {
+    return res.status(401).send({ message: "Please confirm your email before logging in" });
+  }
+
   const isMatch = await bcrypt.compare(password, validUser.password);
 
   if (!isMatch) {
@@ -184,12 +193,9 @@ authRoute.post("/login", async (req, res, next) => {
         return res.status(401).json({ message: 'Unauthorized' });
     }
 
-  const token = jwt.sign(
-    {
+  const token = jwt.sign({
       name: validUser.name,
-    },
-    process.env.JWT_KEY
-  );
+    },process.env.JWT_KEY);
 
   // cookiegenerate
   res.cookie("usercookie", token, {
@@ -197,9 +203,9 @@ authRoute.post("/login", async (req, res, next) => {
     httpOnly: true,
   });
 
-  // authentication and authorization successful
-  // next();
-  return res.status(201).send({ validUser, token });
+  res.status(201).send({ validUser, token });
+    // authentication and authorization successful
+    // next();
 });
 
 
@@ -299,7 +305,7 @@ authRoute.patch("/resetPassword/:id", async (req, res) => {
       { $set: { password: Pass, rePassword: rePass } }
     );
     setNewPass.save();
-    res.status(201).send({ message: "Password updated successfully" });
+    res.status(201).send({ message: "Password updated successfully",setNewPass });
   } catch (error) {
     res.json({ status: "Something Went Wrong" });
   }

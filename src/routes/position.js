@@ -14,11 +14,11 @@ positionRoute.get('/:_id', async(req,res)=>{
 })
 
 positionRoute.post("/newPosition",async(req,res)=>{
-    const { id,title,category,applicationProcess,openings,minSalary,maxSalary,
+    const {title,category,applicationProcess,openings,minSalary,maxSalary,
         locations,rounds,workingMode,relocation,bond,additionalCriteria
      } = req.body;
 
-    if (!id || !title || !category || !applicationProcess || !openings || !minSalary || !maxSalary || !locations || !rounds || !workingMode || !maxSalary || !relocation || !bond || !additionalCriteria ) {
+    if ( !title || !category || !applicationProcess || !openings || !minSalary || !maxSalary || !locations || !rounds || !workingMode || !maxSalary || !relocation || !bond || !additionalCriteria ) {
         res.status(401).send({ message: "fill all the details" })
     }
 
