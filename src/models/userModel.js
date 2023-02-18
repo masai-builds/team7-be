@@ -6,8 +6,9 @@ const userSchema = mongoose.Schema({
     email: {type:String,required:true},
     password:{type:String,required:true},
     rePassword:{type:String,required:true},
+    uuid:{type:String,required:true},
     role:{type:String,enum:["Admin", "Student"], required:true},
-    captcha:{type:String,required:true},
+    
 })
 
 const userModel = mongoose.model('user', userSchema)
