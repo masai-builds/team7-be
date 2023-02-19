@@ -9,28 +9,63 @@ const jwt = require("jsonwebtoken");
 const handlebars = require("handlebars");
 const fs = require("fs");
 const path = require("path");
+const {v4:uuidv4} = require("uuid") ;
+/**
+ * @swagger
+ * components:
+ *      schema :
+ *         signup :
+ *                   type : object
+ *                   properties :
+ *                      name :
+ *                             type :  string
+ *                      email :
+ *                             type :  string
+ *                      password :
+ *                             type :  string
+ *                      rePassword :
+ *                              type :  string
+ *                      role :
+ *                              type :  string
+ *                     
+ *
+ *         login :
+ *                  type : object
+ *                  properties :
+ *                      email :
+ *                             type : string
+ *                      password :
+ *                             type : string
+ *
+ */
 
 /**
  * @swagger
- * auth/signup:
+ * /auth/signup:
  *   post:
  *     summary: user sign up post data
- *     description: user create account 
+ *     description: user create account
+ *     requestBody :
+ *             required : true
+ *             content :
+ *                  application/json :
+ *                           schema :
+ *                              $ref : "#/components/schema/signup"
  *     responses:
  *       200:
- *         description: after successful create account 
+ *         description: after successful create account
  *       401:
- *          description: data not appropriate 
- *       501 : 
+ *          description: data not appropriate
+ *       501 :
  *            description: Internet server problem
- * 
+ *
  */
 
 // signup //
 authRoute.post("/signup", async (req, res) => {
   const userMail = await userModel.findOne({ email: req.body.email });
   const { email, password, rePassword } = req.body;
- 
+  const uuid = uuidv4() ;
   const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/;
 
@@ -61,11 +96,12 @@ authRoute.post("/signup", async (req, res) => {
   const salt = await bcrypt.genSaltSync(10);
   const Pass = await bcrypt.hash(req.body.password, salt);
   const rePass = await bcrypt.hash(req.body.rePassword, salt);
- 
+
   const user = new userModel({
     ...req.body,
     password: Pass,
     rePassword: rePass,
+    uuid
   });
 
   user.save((err, success) => {
@@ -75,7 +111,8 @@ authRoute.post("/signup", async (req, res) => {
     const directory = path.join(__dirname, "..", "utiles", "signupEmail.html");
     const fileRead = fs.readFileSync(directory, "utf-8");
     const template = handlebars.compile(fileRead);
-    const htmlToSend = template({ name: req.body.name });
+    const htmlToSend = template({ name: req.body.name, userId :  uuid });
+    
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -89,7 +126,7 @@ authRoute.post("/signup", async (req, res) => {
       subject: "Signup Successfully",
       html: htmlToSend,
     };
-         
+   
     transporter.sendMail(mailOptions, (err, info) => {
       if (err) {
         return res.status(500).send({ message: "Error sending email" });
@@ -101,23 +138,67 @@ authRoute.post("/signup", async (req, res) => {
     return res.status(201).send({ message: "successfully registered" });
   });
 });
+/**
+ * @swagger
+ * /auth/emailConform/{id}:
+ *   patch:
+ *     summary: Email verification 
+ *     description: Email verification
+ *     parameters :
+ *            - name : id
+ *              in : path
+ *              description  : user id to email verifictaion
+ *              required: true
+ *              minimum : 1
+ *              schema :
+ *               type: string
+ *     responses:
+ *       200:
+ *         description: Delete company details successfully
+ *       401:
+ *          description: data not appropriate
+ *       501 :
+ *            description: Internet server problem
+ *
+ */
+
+authRoute.patch("/emailConform/:id", async (req, res) => {
+
+  const {id} = req.params ;
+  console.log(id)
+   try {
+    const user =  await userModel.findOneAndUpdate({uuid : id}, {$set : { emailConfirmed : true } });
+    user.save() ;
+    return res.status(201).send({message : "Email verification successs"})
+   } catch (error) {
+    return res.status(401).send({meassge : "Email not verified"})
+   }
+  
+
+})
 
 // login //
 /**
  * @swagger
- * 
- * auth/login:
+ *
+ * /auth/login:
  *   post:
  *     summary: user login with register email password
- *     description: user Login  
+ *     description: user Login
+ *     requestBody :
+ *          required : true
+ *          content :
+ *             application/json :
+ *                 schema :
+ *                     $ref : "#/components/schema/login"
  *     responses:
  *       200:
  *         description: after successful login
  *       401:
- *          description: check user email password 
- *       501 : 
+ *          description: check user email password
+ *       501 :
  *            description: Internet server problem
- * 
+ *
  */
 
 authRoute.post("/login", async (req, res, next) => {
@@ -125,7 +206,7 @@ authRoute.post("/login", async (req, res, next) => {
   const validUser = await userModel.findOne({ email });
 
   if (!email || !password) {
-   return res.status(422).send({ message: "fill all the details" })
+    return res.status(422).send({ message: "fill all the details" });
   }
 
   if (!validUser) {
@@ -143,11 +224,10 @@ authRoute.post("/login", async (req, res, next) => {
   }
 
   // authorize based on user role
-  const authorizedRoles = ["Admin", "Student"]; 
-    if (authorizedRoles.length && !authorizedRoles.includes(validUser.role)) {
-       
-        return res.status(401).json({ message: 'Unauthorized' });
-    }
+  const authorizedRoles = ["Admin", "Student"];
+  if (authorizedRoles.length && !authorizedRoles.includes(validUser.role)) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
 
   const token = jwt.sign({
       name: validUser.name,
@@ -159,28 +239,35 @@ authRoute.post("/login", async (req, res, next) => {
     httpOnly: true,
   });
 
-  res.status(201).send({ message: "Login successful"});
+  res.status(201).send({ meassge : "Login successful" });
     // authentication and authorization successful
     // next();
 });
 
-// forgetPassword
-
 // forgetPassword //
 /**
  * @swagger
- * auth/forgetpassword:
+ * /auth/forgetpassword:
  *   post:
  *     summary: user can reset or change password
  *     description: user forget password
+ *     requestBody :
+ *           required : true
+ *           content :
+ *               application/json :
+ *                  schema :
+ *                   type : object
+ *                   properties :
+ *                     email :
+ *                        type : string
  *     responses:
- *       200:
+ *       201:
  *         description: after successful change password
  *       401:
- *          description: check user validation 
- *       501 : 
+ *          description: check user validation
+ *       501 :
  *            description: Internet server problem
- *  
+ *
  */
 
 authRoute.post("/forgetpassword", async (req, res) => {
@@ -198,11 +285,11 @@ authRoute.post("/forgetpassword", async (req, res) => {
     expiresIn: "15m",
   });
 
-// Set up the email transporter
+  // Set up the email transporter
   const directory = path.join(__dirname, "..", "utiles", "resetPassword.html");
   const fileRead = fs.readFileSync(directory, "utf-8");
   const template = handlebars.compile(fileRead);
-  const htmlToSend = template({ name: user.name, userId : user._id });
+  const htmlToSend = template({ name: user.name, userId: user._id });
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -239,6 +326,9 @@ authRoute.patch("/resetPassword/:id", async (req, res) => {
   if (!oldUser) {
     return res.json({ status: "User Not Exists!!" });
   }
+  if (password !== rePassword) {
+    return res.status(401).send({ meassge: "Password not same " });
+  }
   try {
     const salt = await bcrypt.genSaltSync(10);
     const Pass = await bcrypt.hash(password, salt);
@@ -249,7 +339,7 @@ authRoute.patch("/resetPassword/:id", async (req, res) => {
       { $set: { password: Pass, rePassword: rePass } }
     );
     setNewPass.save();
-    res.status(201).send({ message: "Password updated successfully",setNewPass });
+    res.status(201).send({ message: "Password updated successfully" });
   } catch (error) {
     res.json({ status: "Something Went Wrong" });
   }

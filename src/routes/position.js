@@ -26,9 +26,9 @@ positionRoute.post("/newPosition",async(req,res)=>{
         res.status(400).send({ message: "Invalid input data types" });
     }
 
-    // if (!req.user.isAdmin) {
-    //     res.status(401).send({ message: "Unauthorized access" });
-    // }
+    if (!req.user.isAdmin) {
+        res.status(401).send({ message: "Unauthorized access" });
+    }
 
     let request= req.body
     const Data= await posModel.create(request)
