@@ -27,8 +27,7 @@ const {v4:uuidv4} = require("uuid") ;
  *                              type :  string
  *                      role :
  *                              type :  string
- *                      captcha :
- *                            type :  string
+ *                     
  *
  *         login :
  *                  type : object
