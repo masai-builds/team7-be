@@ -72,10 +72,9 @@ authRoute.post("/signup", async (req, res) => {
 
   if (userMail) {
     return res.send({ message: "user already registered" });
-  } else if (password !== rePassword) {
-    return res
-      .status(400)
-      .send({ message: "Please make sure your passwords match." });
+  }
+   if (password !== rePassword) {
+    return res.status(400) .send({ message: "Please make sure your passwords match." });
   }
 
   if (!passwordRegex.test(password)) {
@@ -124,7 +123,7 @@ authRoute.post("/signup", async (req, res) => {
       subject: "Signup Successfully",
       html: htmlToSend,
     };
-   console.log(req.body._id)
+   
     transporter.sendMail(mailOptions, (err, info) => {
       if (err) {
         return res.status(500).send({ message: "Error sending email" });
@@ -136,17 +135,44 @@ authRoute.post("/signup", async (req, res) => {
     return res.status(201).send({ message: "successfully registered" });
   });
 });
-
+/**
+ * @swagger
+ * /auth/emailConform/{id}:
+ *   patch:
+ *     summary: Email verification 
+ *     description: Email verification
+ *     parameters :
+ *            - name : id
+ *              in : path
+ *              description  : user id to email verifictaion
+ *              required: true
+ *              minimum : 1
+ *              schema :
+ *               type: string
+ *     responses:
+ *       200:
+ *         description: Delete company details successfully
+ *       401:
+ *          description: data not appropriate
+ *       501 :
+ *            description: Internet server problem
+ *
+ */
 
 authRoute.patch("/emailConform/:id", async (req, res) => {
 
-  const uuid = req.params ;
-  const user =  await userModel.findOneAndUpdate({uuid}, {$set : { : true } })
-   .then(() => {
-       return res.status(201).send({message : "Email ver"})
-   })
+  const {id} = req.params ;
+  console.log(id)
+   try {
+    const user =  await userModel.findOneAndUpdate({uuid : id}, {$set : { emailConfirmed : true } });
+    user.save() ;
+    return res.status(201).send({message : "Email verification successs"})
+   } catch (error) {
+    return res.status(401).send({meassge : "Email not verified"})
+   }
+  
 
-}
+})
 
 // login //
 /**
@@ -184,6 +210,10 @@ authRoute.post("/login", async (req, res, next) => {
     return res.status(401).send({ message: "Invalid Credentials" });
   }
 
+  if (!validUser.emailConfirmed) {
+    return res.status(401).send({ message: "Please confirm your email before logging in" });
+  }
+
   const isMatch = await bcrypt.compare(password, validUser.password);
 
   if (!isMatch) {
@@ -196,12 +226,9 @@ authRoute.post("/login", async (req, res, next) => {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
-  const token = jwt.sign(
-    {
+  const token = jwt.sign({
       name: validUser.name,
-    },
-    process.env.JWT_KEY
-  );
+    },process.env.JWT_KEY);
 
   // cookiegenerate
   res.cookie("usercookie", token, {
@@ -209,9 +236,9 @@ authRoute.post("/login", async (req, res, next) => {
     httpOnly: true,
   });
 
-  // authentication and authorization successful
-  // next();
-  return res.status(201).send({ validUser, token });
+  res.status(201).send({ meassge : "Login successful" });
+    // authentication and authorization successful
+    // next();
 });
 
 // forgetPassword //
@@ -231,7 +258,7 @@ authRoute.post("/login", async (req, res, next) => {
  *                     email :
  *                        type : string
  *     responses:
- *       200:
+ *       201:
  *         description: after successful change password
  *       401:
  *          description: check user validation
