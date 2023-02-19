@@ -10,8 +10,6 @@ const handlebars = require("handlebars");
 const fs = require("fs");
 const path = require("path");
 
-
-
 /**
  * @swagger
  * auth/signup:
@@ -54,6 +52,10 @@ authRoute.post("/signup", async (req, res) => {
     return res
       .status(400)
       .send({ message: "Please provide a valid email address." });
+  }
+
+  if(!validUser.emailConfirmed){
+    return res.status(403).send({ message: "Please confirm your account before logging in" });
   }
 
   const salt = await bcrypt.genSaltSync(10);
@@ -99,12 +101,6 @@ authRoute.post("/signup", async (req, res) => {
     return res.status(201).send({ message: "successfully registered" });
   });
 });
-
-// //email confirmation
-
-// authRoute.patch('/emailConfirmation',  async(req, res) => {
-//   const {emailConfirmed} 
-// })
 
 // login //
 /**
@@ -163,7 +159,7 @@ authRoute.post("/login", async (req, res, next) => {
     httpOnly: true,
   });
 
-  res.status(201).send({ validUser, token });
+  res.status(201).send({ message: "Login successful"});
     // authentication and authorization successful
     // next();
 });
@@ -258,5 +254,23 @@ authRoute.patch("/resetPassword/:id", async (req, res) => {
     res.json({ status: "Something Went Wrong" });
   }
 });
+
+
+authRoute.post("/company", async (req, res) => {
+  const user = await userModel.findOne({ role });
+  if (user.role === "Admin") {
+  return res.status(201).send({ message: "You have permission to perform this action." });
+
+  
+  }
+  });
+  
+  authRoute.post("/position", async (req, res) => {
+  const user = await userModel.findOne({ role });
+  if (user.role === "Admin") {
+  return res.status(201).send({ message: "You have permission to perform this action." });
+  }
+  });
+
 
 module.exports = authRoute;
