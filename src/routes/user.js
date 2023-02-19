@@ -89,6 +89,10 @@ authRoute.post("/signup", async (req, res) => {
       .send({ message: "Please provide a valid email address." });
   }
 
+  if(!validUser.emailConfirmed){
+    return res.status(403).send({ message: "Please confirm your account before logging in" });
+  }
+
   const salt = await bcrypt.genSaltSync(10);
   const Pass = await bcrypt.hash(req.body.password, salt);
   const rePass = await bcrypt.hash(req.body.rePassword, salt);
@@ -340,5 +344,23 @@ authRoute.patch("/resetPassword/:id", async (req, res) => {
     res.json({ status: "Something Went Wrong" });
   }
 });
+
+
+authRoute.post("/company", async (req, res) => {
+  const user = await userModel.findOne({ role });
+  if (user.role === "Admin") {
+  return res.status(201).send({ message: "You have permission to perform this action." });
+
+  
+  }
+  });
+  
+  authRoute.post("/position", async (req, res) => {
+  const user = await userModel.findOne({ role });
+  if (user.role === "Admin") {
+  return res.status(201).send({ message: "You have permission to perform this action." });
+  }
+  });
+
 
 module.exports = authRoute;
