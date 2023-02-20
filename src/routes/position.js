@@ -1,6 +1,7 @@
 const express = require("express");
 const positionRoute = express.Router();
-const posModel= require("../models/positionModel")
+const posModel= require("../models/positionModel") ;
+
 
 positionRoute.get("/",async(req,res)=>{
     const Data= await posModel.find()

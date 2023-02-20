@@ -1,11 +1,9 @@
 const dotenv = require("dotenv");
-
 dotenv.config();
-
 const Router = require("express");
-
 const companyRoute = Router();
 const companyData = require("../models/newCompanyModel");
+const auth = require("../middleware/auth")
 
 // check valid url function //
 
@@ -76,7 +74,7 @@ function properName(companyName) {
  *
  */
 
-companyRoute.get("/getCompany", async (req, res) => {
+companyRoute.get("/getCompany",auth, async (req, res) => {
   const getCompanyData = await companyData.find({});
   return res.send(getCompanyData);
 });
@@ -101,7 +99,7 @@ companyRoute.get("/getCompany", async (req, res) => {
  *
  */
 
-companyRoute.get("/singleCompany", async (req, res) => {
+companyRoute.get("/singleCompany", async(req, res) => {
   const { companyName } = req.query;
 
   const properNameFormat = properName(companyName);
@@ -119,11 +117,7 @@ companyRoute.get("/singleCompany", async (req, res) => {
     }
     return res.status(201).send(items);
   });
-  // if (getCompany.length <= 0) {
-  //   return res
-  //     .status(401)
-  //     .send({ message: "dont have such company or check company name" });
-  // }
+
 });
 
 // CreateNewCompany details //
@@ -149,7 +143,7 @@ companyRoute.get("/singleCompany", async (req, res) => {
  *            description: Internet server problem
  *
  */
-companyRoute.post("/createCompany", async (req, res) => {
+companyRoute.post("/createCompany", auth,async (req, res) => {
   const {
     companyName,
     websiteUrl,
@@ -223,7 +217,7 @@ companyRoute.post("/createCompany", async (req, res) => {
  *            description: Internet server problem
  *
  */
-companyRoute.patch("/editCompany/:id", async (req, res) => {
+companyRoute.patch("/editCompany/:id",auth,  async (req, res) => {
   const { id } = req.params;
   const { companyName, websiteUrl } = req.body;
   const properNameFormat = properName(companyName);
@@ -266,7 +260,7 @@ companyRoute.patch("/editCompany/:id", async (req, res) => {
  *
  */
 
-companyRoute.delete("/deleteCompany/:id", async (req, res) => {
+companyRoute.delete("/deleteCompany/:id",auth, async (req, res) => {
   const { id } = req.params;
 
   await companyData

@@ -10,6 +10,7 @@ const handlebars = require("handlebars");
 const fs = require("fs");
 const path = require("path");
 const {v4:uuidv4} = require("uuid") ;
+const finduserRole = require("../middleware/auth") ;
 /**
  * @swagger
  * components:
@@ -136,12 +137,12 @@ authRoute.post("/signup", async (req, res) => {
 });
 /**
  * @swagger
- * /auth/emailConform/{id}:
+ * /auth/emailConform/{uuid}:
  *   patch:
  *     summary: Email verification 
  *     description: Email verification
  *     parameters :
- *            - name : id
+ *            - name : uuid
  *              in : path
  *              description  : user id to email verifictaion
  *              required: true
@@ -161,7 +162,7 @@ authRoute.post("/signup", async (req, res) => {
 authRoute.patch("/emailConform/:id", async (req, res) => {
 
   const {id} = req.params ;
-  console.log(id)
+ 
    try {
     const user =  await userModel.findOneAndUpdate({uuid : id}, {$set : { emailConfirmed : true } });
     user.save() ;
@@ -224,7 +225,7 @@ authRoute.post("/login", async (req, res, next) => {
   if (authorizedRoles.length && !authorizedRoles.includes(validUser.role)) {
     return res.status(401).json({ message: "Unauthorized" });
   }
-
+  finduserRole(email) ;
   const token = jwt.sign({
       name: validUser.name,
     },process.env.JWT_KEY);
@@ -313,7 +314,41 @@ authRoute.post("/forgetpassword", async (req, res) => {
 });
 
 //reset password
-
+/**
+ * @swagger
+ * /auth/resetPassword/{id}:
+ *   patch:
+ *     summary: reset Password
+ *     description: reset Password
+ *     parameters :
+ *            - name : id
+ *              in : path
+ *              description  : reset Password
+ *              required: true
+ *              minimum : 1
+ *              schema :
+ *               type: string
+ *
+ *     requestBody :
+ *            required : true
+ *            content :
+ *               application/json:
+ *                      schema:
+ *                        type : object
+ *                        properties : 
+ *                            password : 
+ *                              type : string
+ *                            rePassword : 
+ *                              type : string 
+ *     responses:
+ *       200:
+ *         description: Delete company details successfully
+ *       401:
+ *          description: data not appropriate
+ *       501 :
+ *            description: Internet server problem
+ *
+ */
 authRoute.patch("/resetPassword/:id", async (req, res) => {
   const { id } = req.params;
   const { password, rePassword } = req.body;
