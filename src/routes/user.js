@@ -3,6 +3,7 @@ dotenv.config();
 const Router = require("express");
 const authRoute = Router();
 const bcrypt = require("bcrypt");
+const cookieParser = require("cookie-parser");
 const userModel = require("../models/userModel.js");
 const nodemailer = require("nodemailer");
 const jwt = require("jsonwebtoken");
@@ -10,7 +11,19 @@ const handlebars = require("handlebars");
 const fs = require("fs");
 const path = require("path");
 const {v4:uuidv4} = require("uuid") ;
-const finduserRole = require("../middleware/auth") ;
+const finduserRole = require("../middleware/adminAuth") ;
+
+
+// const syncToken = jwt.sign({payload: { x: 1, y: '2'}}, 'JWT_SECRET');
+// console.log(syncToken);
+// jwt.sign({payload: { x: 1, y: '2'}}, 'JWT_SECRET', (err, asyncToken) => {
+//   if (err) throw err;
+//   console.log(asyncToken);
+// });
+// jwt.verify(syncToken, "JWT_SECRET", (err, decodedToken) => {
+//   console.log(decodedToken)
+// })
+
 /**
  * @swagger
  * components:
@@ -221,21 +234,17 @@ authRoute.post("/login", async (req, res, next) => {
   }
 
   // authorize based on user role
-  const authorizedRoles = ["Admin", "Student"];
-  if (authorizedRoles.length && !authorizedRoles.includes(validUser.role)) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-  finduserRole(email) ;
-  const token = jwt.sign({
+   const token = jwt.sign({
       name: validUser.name,
+      role : validUser.role
     },process.env.JWT_KEY);
 
   // cookiegenerate
-  res.cookie("usercookie", token, {
+  res.cookie("usercookieAuth", token, {
     expires: new Date(Date.now() + 9000000),
     httpOnly: true,
   });
-
+  
   res.status(201).send({ meassge : "Login successful" });
     // authentication and authorization successful
     // next();
@@ -375,5 +384,7 @@ authRoute.patch("/resetPassword/:id", async (req, res) => {
     res.json({ status: "Something Went Wrong" });
   }
 });
+
+
 
 module.exports = authRoute;

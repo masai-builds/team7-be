@@ -3,8 +3,8 @@ dotenv.config();
 const Router = require("express");
 const companyRoute = Router();
 const companyData = require("../models/newCompanyModel");
-const auth = require("../middleware/auth")
-
+const authAdmin = require("../middleware/adminAuth");
+const studentAuth = require("../middleware/studentAuth") ;
 // check valid url function //
 
 function validUrl(url) {
@@ -74,7 +74,7 @@ function properName(companyName) {
  *
  */
 
-companyRoute.get("/getCompany",auth, async (req, res) => {
+companyRoute.get("/getCompany",studentAuth,async (req, res) => {
   const getCompanyData = await companyData.find({});
   return res.send(getCompanyData);
 });
@@ -99,7 +99,7 @@ companyRoute.get("/getCompany",auth, async (req, res) => {
  *
  */
 
-companyRoute.get("/singleCompany", async(req, res) => {
+companyRoute.get("/singleCompany",authAdmin, async(req, res) => {
   const { companyName } = req.query;
 
   const properNameFormat = properName(companyName);
@@ -143,7 +143,7 @@ companyRoute.get("/singleCompany", async(req, res) => {
  *            description: Internet server problem
  *
  */
-companyRoute.post("/createCompany", auth,async (req, res) => {
+companyRoute.post("/createCompany",authAdmin,async (req, res) => {
   const {
     companyName,
     websiteUrl,
@@ -217,7 +217,7 @@ companyRoute.post("/createCompany", auth,async (req, res) => {
  *            description: Internet server problem
  *
  */
-companyRoute.patch("/editCompany/:id",auth,  async (req, res) => {
+companyRoute.patch("/editCompany/:id",authAdmin, async (req, res) => {
   const { id } = req.params;
   const { companyName, websiteUrl } = req.body;
   const properNameFormat = properName(companyName);
@@ -260,7 +260,7 @@ companyRoute.patch("/editCompany/:id",auth,  async (req, res) => {
  *
  */
 
-companyRoute.delete("/deleteCompany/:id",auth, async (req, res) => {
+companyRoute.delete("/deleteCompany/:id",authAdmin, async (req, res) => {
   const { id } = req.params;
 
   await companyData
