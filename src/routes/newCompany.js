@@ -1,12 +1,39 @@
 const dotenv = require("dotenv");
 
 dotenv.config();
-
 const Router = require("express");
-
 const companyRoute = Router();
 const companyData = require("../models/newCompanyModel");
-const multer = require("multer")
+const multer = require("multer");
+const path = require("path");
+
+
+
+
+
+// multer //
+const storageImage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    
+    cb(null, path.join(__dirname, "..", "..", "upload"));
+  },
+  filename: function (req, file, cb) {
+    cb(null, new Date().toISOString() + file.originalname);
+  },
+});
+
+const fileFilter = (req, file, cb) => {
+  
+  if(file.mimetype == "image/jpeg" || file.mimetype == "image/png" || file.mimetype =="jpg"){
+    
+    cb(null, true)
+  }else {
+    cb(null, false)
+  }
+}
+
+const upload = multer({ storage: storageImage , fileFilter : fileFilter});
+
 // check valid url function //
 
 function validUrl(url) {
@@ -28,6 +55,8 @@ function properName(companyName) {
     return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
   });
 }
+
+
 //swaggerSchema //
 /**
  * @swagger
@@ -56,6 +85,9 @@ function properName(companyName) {
  *                              type :  string
  *                      leadSource :
  *                             type :  string
+ *                      companyLogo :
+ *                              type : string
+ *                              format : binary
  *
  */
 
@@ -76,7 +108,7 @@ function properName(companyName) {
  *
  */
 
-companyRoute.get("/getCompany", async (req, res) => {
+companyRoute.get("/getCompany" ,async (req, res) => {
   const getCompanyData = await companyData.find({});
   return res.send(getCompanyData);
 });
@@ -115,7 +147,9 @@ companyRoute.get("/singleCompany", async (req, res) => {
       return res.status(500).send({ meassge: "searching error", err });
     }
     if (items.length <= 0) {
-      return res.status(401).send({ message: "no comapny available or once check company name" });
+      return res
+        .status(401)
+        .send({ message: "no comapny available or once check company name" });
     }
     return res.status(201).send(items);
   });
@@ -136,7 +170,8 @@ companyRoute.get("/singleCompany", async (req, res) => {
  *     requestBody :
  *        required : true
  *        content :
- *             application/json:
+ *             
+ *             multipart/form-data:
  *                  schema:
  *                      $ref : "#/components/schema/newCompany"
  *
@@ -149,48 +184,54 @@ companyRoute.get("/singleCompany", async (req, res) => {
  *            description: Internet server problem
  *
  */
-companyRoute.post("/createCompany", async (req, res) => {
-  const {
-    companyName,
-    websiteUrl,
-    companySegment,
-    industry,
-    description,
-    whyApply,
-    linkdinUrl,
-    glassdoorUrl,
-    ambitionBox,
-    leadSource,
-  } = req.body;
+companyRoute.post("/createCompany",upload.single("companyLogo"),async (req, res) => {
+  console.log(req.body)
+  console.log(req.file)
 
-  if (
-    !companyName ||
-    !websiteUrl ||
-    !companySegment ||
-    !industry ||
-    !description ||
-    !whyApply ||
-    !leadSource
-  ) {
-    return res.status(404).send({ message: "Please fill required data" });
-  }
-  if (!validUrl(websiteUrl)) {
-    return res.status(401).send({ meassge: "please enter valid company url" });
-  }
+    const {
+      companyName,
+      websiteUrl,
+      companySegment,
+      industry,
+      description,
+      whyApply,
+      linkdinUrl,
+      glassdoorUrl,
+      ambitionBox,
+      leadSource,
+    } = req.body;
 
-  const toTitleCase = properName(companyName);
-
-  new companyData({ ...req.body, companyName: toTitleCase }).save(
-    (err, success) => {
-      if (err) {
-        return res.status(401).send({ message: "data not save in database" });
-      }
-      return res
-        .status(201)
-        .send({ message: "New company added successfully" });
+    if (
+      !companyName ||
+      !websiteUrl ||
+      !companySegment ||
+      !industry ||
+      !description ||
+      !whyApply ||
+      !leadSource
+    ) {
+      return res.status(404).send({ message: "Please fill required data" });
     }
-  );
-});
+    if (!validUrl(websiteUrl)) {
+      return res
+        .status(401)
+        .send({ meassge: "please enter valid company url" });
+    }
+
+    const toTitleCase = properName(companyName);
+
+    new companyData({ ...req.body, companyName: toTitleCase }).save(
+      (err, success) => {
+        if (err) {
+          return res.status(401).send({ message: "data not save in database" });
+        }
+        return res
+          .status(201)
+          .send({ message: "New company added successfully" });
+      }
+    );
+  }
+);
 
 // upadte company details //
 /**
