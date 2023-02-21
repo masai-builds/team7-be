@@ -6,7 +6,7 @@ const Router = require("express");
 
 const companyRoute = Router();
 const companyData = require("../models/newCompanyModel");
-
+const multer = require("multer")
 // check valid url function //
 
 function validUrl(url) {
