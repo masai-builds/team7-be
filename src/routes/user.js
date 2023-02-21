@@ -103,6 +103,10 @@ authRoute.post("/signup", async (req, res) => {
       .send({ message: "Please provide a valid email address." });
   }
 
+  if(!validUser.emailConfirmed){
+    return res.status(403).send({ message: "Please confirm your account before logging in" });
+  }
+
   const salt = await bcrypt.genSaltSync(10);
   const Pass = await bcrypt.hash(req.body.password, salt);
   const rePass = await bcrypt.hash(req.body.rePassword, salt);
