@@ -153,11 +153,40 @@ companyRoute.get("/singleCompany", async (req, res) => {
     }
     return res.status(201).send(items);
   });
-  // if (getCompany.length <= 0) {
-  //   return res
-  //     .status(401)
-  //     .send({ message: "dont have such company or check company name" });
-  // }
+
+});
+
+// get particular company by id //
+/**
+ * @swagger
+ * /getParticularCompany/{id}:
+ *   get:
+ *     summary: get single company details
+ *     description: get single company details
+ *     parameters :
+ *            - name : id
+ *              in : path
+ *              description  : company id to get
+ *              required: true
+ *              minimum : 1
+ *              schema :
+ *               type: string
+ *
+ *     
+ *     responses:
+ *       200:
+ *         description:  company details successfully
+ *       401:
+ *          description: data not appropriate
+ *       501 :
+ *            description: Internet server problem
+ *
+ */
+companyRoute.get("/getParticularCompany/:id" ,async (req, res) => {
+  const {id} = req.params ;
+  
+  const getParticularCompany = await companyData.findById({_id : id});
+  return res.send(getParticularCompany);
 });
 
 // CreateNewCompany details //
