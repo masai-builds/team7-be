@@ -96,7 +96,6 @@ authRoute.post("/signup", async (req, res) => {
       .send({ message: "Please provide a valid email address." });
   }
 
-
   const salt = await bcrypt.genSaltSync(10);
   const Pass = await bcrypt.hash(req.body.password, salt);
   const rePass = await bcrypt.hash(req.body.rePassword, salt);
@@ -167,9 +166,7 @@ authRoute.post("/signup", async (req, res) => {
  */
 
 authRoute.patch("/emailConfirm/:id", async (req, res) => {
-
   const {id} = req.params ;
- 
    try {
     const user =  await userModel.findOneAndUpdate({uuid : id}, {$set : { emailConfirmed : true } });
     user.save() ;
@@ -205,7 +202,7 @@ authRoute.patch("/emailConfirm/:id", async (req, res) => {
  *
  */
 
-authRoute.post("/login", async (req, res, next) => {
+authRoute.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   const validUser = await userModel.findOne({ email });
@@ -241,8 +238,6 @@ authRoute.post("/login", async (req, res, next) => {
   });
   
   res.status(201).send({ meassge : "Login successful" });
-    // authentication and authorization successful
-    // next();
 });
 
 // forgetPassword //
@@ -379,7 +374,5 @@ authRoute.patch("/resetPassword/:id", async (req, res) => {
     res.json({ status: "Something Went Wrong" });
   }
 });
-
-
 
 module.exports = authRoute;

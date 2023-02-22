@@ -6,6 +6,7 @@ const bodyParser = require("body-parser");
 const authRoute = require("./src/routes/user");
 const positionRoute= require("./src/routes/position");
 const companyRoute = require("./src/routes/newCompany")
+const eligibilityRoute = require("./src/routes/eligibility");
 const cookieParser = require("cookie-parser");
 const dotenv = require("dotenv");
 const swaggerUi = require('swagger-ui-express') ;
@@ -25,7 +26,8 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 app.use(cookieParser());
 app.use("/auth", authRoute);
 app.use("/position", positionRoute)
-app.use("/", companyRoute) ;
+app.use("/", companyRoute)
+app.use("/eligibility", eligibilityRoute)
 
 
 app.get("/", (req, res) => {
