@@ -3,7 +3,6 @@ dotenv.config();
 const Router = require("express");
 const authRoute = Router();
 const bcrypt = require("bcrypt");
-const cookieParser = require("cookie-parser");
 const userModel = require("../models/userModel.js");
 const nodemailer = require("nodemailer");
 const jwt = require("jsonwebtoken");
@@ -11,18 +10,6 @@ const handlebars = require("handlebars");
 const fs = require("fs");
 const path = require("path");
 const {v4:uuidv4} = require("uuid") ;
-const finduserRole = require("../middleware/adminAuth") ;
-
-
-// const syncToken = jwt.sign({payload: { x: 1, y: '2'}}, 'JWT_SECRET');
-// console.log(syncToken);
-// jwt.sign({payload: { x: 1, y: '2'}}, 'JWT_SECRET', (err, asyncToken) => {
-//   if (err) throw err;
-//   console.log(asyncToken);
-// });
-// jwt.verify(syncToken, "JWT_SECRET", (err, decodedToken) => {
-//   console.log(decodedToken)
-// })
 
 /**
  * @swagger
@@ -272,7 +259,7 @@ authRoute.post("/login", async (req, res) => {
  *
  */
 
-authRoute.post("/forgetpassword", async (req, res) => {
+authRoute.post("/forgetPassword", async (req, res) => {
   const { email } = req.body;
   const user = await userModel.findOne({ email });
 
