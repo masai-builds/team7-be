@@ -8,9 +8,9 @@ positionRoute.get("/",studentAuth,async(req,res)=>{
     res.status(200).send({message:"list of positions", Data})
 })
 
-positionRoute.get('/:_id', async(req,res)=>{
-   let {_id} = req.params
-   const Data = await posModel.findById(_id)
+positionRoute.get('/:id', async(req,res)=>{
+   let {id} = req.params
+   const Data = await posModel.findById(id)
    res.status(200).send({message:" data of this position", Data})
 })
 
@@ -25,10 +25,6 @@ positionRoute.post("/newPosition",async(req,res)=>{
 
     if (typeof openings !== "number" || !Array.isArray(locations) || locations.some(location => typeof location !== "string")) {
         res.status(400).send({ message: "Invalid input data types" });
-    }
-
-    if (!req.user.isAdmin) {
-        res.status(401).send({ message: "Unauthorized access" });
     }
 
     let request= req.body
