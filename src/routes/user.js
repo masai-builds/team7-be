@@ -3,6 +3,7 @@ dotenv.config();
 const Router = require("express");
 const authRoute = Router();
 const bcrypt = require("bcrypt");
+const cookieParser = require("cookie-parser");
 const userModel = require("../models/userModel.js");
 const nodemailer = require("nodemailer");
 const jwt = require("jsonwebtoken");
@@ -10,6 +11,19 @@ const handlebars = require("handlebars");
 const fs = require("fs");
 const path = require("path");
 const {v4:uuidv4} = require("uuid") ;
+const finduserRole = require("../middleware/adminAuth") ;
+
+
+// const syncToken = jwt.sign({payload: { x: 1, y: '2'}}, 'JWT_SECRET');
+// console.log(syncToken);
+// jwt.sign({payload: { x: 1, y: '2'}}, 'JWT_SECRET', (err, asyncToken) => {
+//   if (err) throw err;
+//   console.log(asyncToken);
+// });
+// jwt.verify(syncToken, "JWT_SECRET", (err, decodedToken) => {
+//   console.log(decodedToken)
+// })
+
 /**
  * @swagger
  * components:
@@ -136,12 +150,12 @@ authRoute.post("/signup", async (req, res) => {
 });
 /**
  * @swagger
- * /auth/emailConform/{id}:
+ * /auth/emailConform/{uuid}:
  *   patch:
  *     summary: Email verification 
  *     description: Email verification
  *     parameters :
- *            - name : id
+ *            - name : uuid
  *              in : path
  *              description  : user id to email verifictaion
  *              required: true
@@ -217,17 +231,18 @@ authRoute.post("/login", async (req, res) => {
     return res.status(401).send({ message: "Invalid Credentials" });
   }
 
-  const token = jwt.sign({
+  // authorize based on user role
+   const token = jwt.sign({
       name: validUser.name,
-      role: validUser.role
+      role : validUser.role
     },process.env.JWT_KEY);
 
   // cookiegenerate
-  res.cookie("usercookie", token, {
+  res.cookie("usercookieAuth", token, {
     expires: new Date(Date.now() + 9000000),
     httpOnly: true,
   });
-
+  
   res.status(201).send({ meassge : "Login successful" });
 });
 
@@ -304,7 +319,41 @@ authRoute.post("/forgetpassword", async (req, res) => {
 });
 
 //reset password
-
+/**
+ * @swagger
+ * /auth/resetPassword/{id}:
+ *   patch:
+ *     summary: reset Password
+ *     description: reset Password
+ *     parameters :
+ *            - name : id
+ *              in : path
+ *              description  : reset Password
+ *              required: true
+ *              minimum : 1
+ *              schema :
+ *               type: string
+ *
+ *     requestBody :
+ *            required : true
+ *            content :
+ *               application/json:
+ *                      schema:
+ *                        type : object
+ *                        properties : 
+ *                            password : 
+ *                              type : string
+ *                            rePassword : 
+ *                              type : string 
+ *     responses:
+ *       200:
+ *         description: Delete company details successfully
+ *       401:
+ *          description: data not appropriate
+ *       501 :
+ *            description: Internet server problem
+ *
+ */
 authRoute.patch("/resetPassword/:id", async (req, res) => {
   const { id } = req.params;
   const { password, rePassword } = req.body;

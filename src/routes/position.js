@@ -1,10 +1,10 @@
 const express = require("express");
 const positionRoute = express.Router();
-const posModel= require("../models/positionModel")
-const authMiddleware = require("../middleware/authMiddleware");
+const posModel= require("../models/positionModel") ;
+const studentAuth = require("../middleware/studentAuth") ;
 
-positionRoute.get("/",async(req,res)=>{
-    const Data= await posModel.find().populate("company_id")
+positionRoute.get("/",studentAuth,async(req,res)=>{
+    const Data= await posModel.find()
     res.status(200).send({message:"list of positions", Data})
 })
 
@@ -41,7 +41,7 @@ positionRoute.patch("/updatePosition/:id",async(req,res)=>{
 
 positionRoute.delete("/deletePosition/:id",async(req,res)=>{
     let {id} = req.params
-    const Data= await posModel.findByIdAndDelete(id)
+    const Data= await posModel.findByIdAndDelete({_id : id})
     res.status(200).send({message: "position deleted successfully", Data})
 })
 
