@@ -185,9 +185,7 @@ companyRoute.get("/singleCompany", async (req, res) => {
  *
  */
 companyRoute.post("/createCompany",upload.single("companyLogo"),async (req, res) => {
-  console.log(req.body)
-  console.log(req.file)
-
+console.log(req.file)
     const {
       companyName,
       websiteUrl,
