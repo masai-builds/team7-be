@@ -1,15 +1,16 @@
 const express = require("express");
 const positionRoute = express.Router();
 const posModel= require("../models/positionModel")
+const authMiddleware = require("../middleware/authMiddleware");
 
 positionRoute.get("/",async(req,res)=>{
-    const Data= await posModel.find()
+    const Data= await posModel.find().populate("company_id")
     res.status(200).send({message:"list of positions", Data})
 })
 
-positionRoute.get('/:_id', async(req,res)=>{
-   let {_id} = req.params
-   const Data = await posModel.findById(_id)
+positionRoute.get('/:id', async(req,res)=>{
+   let {id} = req.params
+   const Data = await posModel.findById(id)
    res.status(200).send({message:" data of this position", Data})
 })
 
@@ -26,25 +27,21 @@ positionRoute.post("/newPosition",async(req,res)=>{
         res.status(400).send({ message: "Invalid input data types" });
     }
 
-    if (!req.user.isAdmin) {
-        res.status(401).send({ message: "Unauthorized access" });
-    }
-
     let request= req.body
     const Data= await posModel.create(request)
     res.status(201).send({message:"new position added successfully",Data})
 })
 
-positionRoute.patch("/updatePosition/:_id",async(req,res)=>{
-    let {_id} = req.params
+positionRoute.patch("/updatePosition/:id",async(req,res)=>{
+    let {id} = req.params
     const updateData = req.body;
-    const Data = await posModel.findByIdAndUpdate(_id, updateData, {new: true,});
+    const Data = await posModel.findByIdAndUpdate(id, updateData, {new: true,});
     res.status(200).send({message: "position updated successfully" ,Data})
 })
 
-positionRoute.delete("/deletePosition/:_id",async(req,res)=>{
-    let {_id} = req.params
-    const Data= await posModel.findByIdAndDelete(_id)
+positionRoute.delete("/deletePosition/:id",async(req,res)=>{
+    let {id} = req.params
+    const Data= await posModel.findByIdAndDelete(id)
     res.status(200).send({message: "position deleted successfully", Data})
 })
 

@@ -5,7 +5,7 @@ const cors = require("cors");
 const authRoute = require("./src/routes/user");
 const positionRoute= require("./src/routes/position");
 const companyRoute = require("./src/routes/newCompany")
-
+const eligibilityRoute = require("./src/routes/eligibility");
 const dotenv = require("dotenv");
 const swaggerUi = require('swagger-ui-express') ;
 const swaggerSpec = require("./swagger") ;
@@ -20,7 +20,8 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
 app.use("/auth", authRoute);
 app.use("/position", positionRoute)
-app.use("/", companyRoute) ;
+app.use("/", companyRoute)
+app.use("/eligibility", eligibilityRoute)
 
 
 app.get("/", (req, res) => {

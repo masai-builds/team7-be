@@ -1,9 +1,6 @@
 const dotenv = require("dotenv");
-
 dotenv.config();
-
 const Router = require("express");
-
 const companyRoute = Router();
 const companyData = require("../models/newCompanyModel");
 
@@ -77,7 +74,7 @@ function properName(companyName) {
  */
 
 companyRoute.get("/getCompany", async (req, res) => {
-  const getCompanyData = await companyData.find({});
+  const getCompanyData = await companyData.find({})
   return res.send(getCompanyData);
 });
 /**

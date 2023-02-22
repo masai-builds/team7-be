@@ -89,10 +89,6 @@ authRoute.post("/signup", async (req, res) => {
       .send({ message: "Please provide a valid email address." });
   }
 
-  if(!validUser.emailConfirmed){
-    return res.status(403).send({ message: "Please confirm your account before logging in" });
-  }
-
   const salt = await bcrypt.genSaltSync(10);
   const Pass = await bcrypt.hash(req.body.password, salt);
   const rePass = await bcrypt.hash(req.body.rePassword, salt);
@@ -162,10 +158,8 @@ authRoute.post("/signup", async (req, res) => {
  *
  */
 
-authRoute.patch("/emailConform/:id", async (req, res) => {
-
+authRoute.patch("/emailConfirm/:id", async (req, res) => {
   const {id} = req.params ;
-  console.log(id)
    try {
     const user =  await userModel.findOneAndUpdate({uuid : id}, {$set : { emailConfirmed : true } });
     user.save() ;
@@ -201,7 +195,7 @@ authRoute.patch("/emailConform/:id", async (req, res) => {
  *
  */
 
-authRoute.post("/login", async (req, res, next) => {
+authRoute.post("/login", async (req, res) => {
   const { email, password } = req.body;
   const validUser = await userModel.findOne({ email });
 
@@ -223,14 +217,9 @@ authRoute.post("/login", async (req, res, next) => {
     return res.status(401).send({ message: "Invalid Credentials" });
   }
 
-  // authorize based on user role
-  const authorizedRoles = ["Admin", "Student"];
-  if (authorizedRoles.length && !authorizedRoles.includes(validUser.role)) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-
   const token = jwt.sign({
       name: validUser.name,
+      role: validUser.role
     },process.env.JWT_KEY);
 
   // cookiegenerate
@@ -240,8 +229,6 @@ authRoute.post("/login", async (req, res, next) => {
   });
 
   res.status(201).send({ meassge : "Login successful" });
-    // authentication and authorization successful
-    // next();
 });
 
 // forgetPassword //
@@ -344,23 +331,5 @@ authRoute.patch("/resetPassword/:id", async (req, res) => {
     res.json({ status: "Something Went Wrong" });
   }
 });
-
-
-authRoute.post("/company", async (req, res) => {
-  const user = await userModel.findOne({ role });
-  if (user.role === "Admin") {
-  return res.status(201).send({ message: "You have permission to perform this action." });
-
-  
-  }
-  });
-  
-  authRoute.post("/position", async (req, res) => {
-  const user = await userModel.findOne({ role });
-  if (user.role === "Admin") {
-  return res.status(201).send({ message: "You have permission to perform this action." });
-  }
-  });
-
 
 module.exports = authRoute;
