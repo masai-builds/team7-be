@@ -3,7 +3,7 @@ const positionRoute = express.Router();
 const posModel= require("../models/positionModel") ;
 const studentAuth = require("../middleware/studentAuth") ;
 
-positionRoute.get("/",studentAuth,async(req,res)=>{
+positionRoute.get("/",async(req,res)=>{
     const Data= await posModel.find()
     res.status(200).send({message:"list of positions", Data})
 })

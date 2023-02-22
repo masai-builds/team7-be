@@ -45,6 +45,7 @@ const newCompanySchema = mongoose.Schema({
     type: String
      
   }
+ 
 });
 
 const companyModel = mongoose.model("newCompany", newCompanySchema);

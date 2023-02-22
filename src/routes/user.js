@@ -14,15 +14,7 @@ const {v4:uuidv4} = require("uuid") ;
 const finduserRole = require("../middleware/adminAuth") ;
 
 
-// const syncToken = jwt.sign({payload: { x: 1, y: '2'}}, 'JWT_SECRET');
-// console.log(syncToken);
-// jwt.sign({payload: { x: 1, y: '2'}}, 'JWT_SECRET', (err, asyncToken) => {
-//   if (err) throw err;
-//   console.log(asyncToken);
-// });
-// jwt.verify(syncToken, "JWT_SECRET", (err, decodedToken) => {
-//   console.log(decodedToken)
-// })
+
 
 /**
  * @swagger
@@ -83,6 +75,7 @@ authRoute.post("/signup", async (req, res) => {
   const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/;
 
+  c
   if (userMail) {
     return res.send({ message: "user already registered" });
   }
@@ -103,9 +96,6 @@ authRoute.post("/signup", async (req, res) => {
       .send({ message: "Please provide a valid email address." });
   }
 
-  if(!validUser.emailConfirmed){
-    return res.status(403).send({ message: "Please confirm your account before logging in" });
-  }
 
   const salt = await bcrypt.genSaltSync(10);
   const Pass = await bcrypt.hash(req.body.password, salt);
@@ -122,7 +112,7 @@ authRoute.post("/signup", async (req, res) => {
     if (err) {
       return res.status(500).send({ message: "error occured" });
     }
-    const directory = path.join(__dirname, "..", "utiles", "signupEmail.html");
+    const directory = path.join(__dirname, "..", "utils", "signupEmail.html");
     const fileRead = fs.readFileSync(directory, "utf-8");
     const template = handlebars.compile(fileRead);
     const htmlToSend = template({ name: req.body.name, userId :  uuid });
@@ -176,7 +166,7 @@ authRoute.post("/signup", async (req, res) => {
  *
  */
 
-authRoute.patch("/emailConform/:id", async (req, res) => {
+authRoute.patch("/emailConfirm/:id", async (req, res) => {
 
   const {id} = req.params ;
  
@@ -217,9 +207,10 @@ authRoute.patch("/emailConform/:id", async (req, res) => {
 
 authRoute.post("/login", async (req, res, next) => {
   const { email, password } = req.body;
-  const validUser = await userModel.findOne({ email });
 
-  if (!email || !password) {
+  const validUser = await userModel.findOne({ email });
+  
+ if (!email || !password) {
     return res.status(422).send({ message: "fill all the details" });
   }
 
@@ -257,7 +248,7 @@ authRoute.post("/login", async (req, res, next) => {
 // forgetPassword //
 /**
  * @swagger
- * /auth/forgetpassword:
+ * /auth/forgetPassword:
  *   post:
  *     summary: user can reset or change password
  *     description: user forget password
@@ -280,7 +271,7 @@ authRoute.post("/login", async (req, res, next) => {
  *
  */
 
-authRoute.post("/forgetpassword", async (req, res) => {
+authRoute.post("/forgetPassword", async (req, res) => {
   const { email } = req.body;
   const user = await userModel.findOne({ email });
 
@@ -296,7 +287,7 @@ authRoute.post("/forgetpassword", async (req, res) => {
   });
 
   // Set up the email transporter
-  const directory = path.join(__dirname, "..", "utiles", "resetPassword.html");
+  const directory = path.join(__dirname, "..", "utils", "resetPassword.html");
   const fileRead = fs.readFileSync(directory, "utf-8");
   const template = handlebars.compile(fileRead);
   const htmlToSend = template({ name: user.name, userId: user._id });

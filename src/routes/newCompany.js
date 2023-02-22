@@ -157,6 +157,7 @@ companyRoute.get("/getParticularCompany/:id" ,async (req, res) => {
   const {id} = req.params ;
   
   const getParticularCompany = await companyData.findById({_id : id});
+  
   return res.send(getParticularCompany);
 });
 
