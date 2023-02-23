@@ -15,8 +15,7 @@ const positionSchema = mongoose.Schema({
     workingMode: { type: [String], required: true },
     relocation: { type: [String], required: true },
     bond: { type: String, required: false },
-    additionalCriteria: { type: String, required: false },
-    company_id:[{type:mongoose.Schema.Types.ObjectId,ref:"company",required:true}],
+    additionalCriteria: { type: String, required: false }
 })
 
 const positionModel = mongoose.model('position', positionSchema)

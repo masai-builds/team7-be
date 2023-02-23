@@ -74,7 +74,7 @@ function properName(companyName) {
  *
  */
 
-companyRoute.get("/getCompany",studentAuth,async (req, res) => {
+companyRoute.get("/getCompany",async (req, res) => {
   const getCompanyData = await companyData.find({});
   return res.send(getCompanyData);
 });
@@ -99,7 +99,7 @@ companyRoute.get("/getCompany",studentAuth,async (req, res) => {
  *
  */
 
-companyRoute.get("/singleCompany",authAdmin, async(req, res) => {
+companyRoute.get("/singleCompany", async(req, res) => {
   const { companyName } = req.query;
 
   const properNameFormat = properName(companyName);
