@@ -2,7 +2,6 @@ const mongoose = require ("mongoose")
 
 
 const positionSchema = mongoose.Schema({
-    
    
     title: { type: String, required: true },
     category: { type: String, required: true },
@@ -16,9 +15,8 @@ const positionSchema = mongoose.Schema({
     workingMode: { type: [String], required: true },
     relocation: { type: [String], required: true },
     bond: { type: String, required: false },
-    additionalCriteria: { type: String, required: false } ,
-    eligibilityId : [{type : mongoose.Schema.Types.ObjectId, ref :"eligibility"}]
-   
+    additionalCriteria: { type: String, required: false },
+    eligibilityId:[{type:mongoose.Schema.Types.ObjectId,ref:"eligibility"}],
 })
 
 const positionModel = mongoose.model('position', positionSchema)

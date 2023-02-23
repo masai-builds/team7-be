@@ -25,9 +25,9 @@ app.use(cors());
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 app.use(cookieParser());
 app.use("/auth", authRoute);
-app.use("/position", positionRoute)
+app.use("/", positionRoute)
 app.use("/", companyRoute)
-app.use("/eligibility", eligibilityRoute)
+app.use("/", eligibilityRoute)
 
 
 app.get("/", (req, res) => {

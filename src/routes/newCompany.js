@@ -78,11 +78,27 @@ function properName(companyName) {
  *            description: Internet server problem
  *
  */
-
-companyRoute.get("/getCompany",studentAuth,async (req, res) => {
-  const getCompanyData = await companyData.find({});
-  return res.send(getCompanyData);
+companyRoute.get("/getCompany", async (req, res) => {
+  try {
+    const companies = await companyData.find().populate({
+      path: "positionId",
+      populate: {
+        path: "eligibilityId",
+        model: "eligibility",
+      },
+    });
+    res.json(companies);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server Error" });
+  }
 });
+// companyRoute.get("/getCompany",async (req, res) => {
+
+//   const getCompanyData = await companyData.find({});
+//   return res.send(getCompanyData);
+// });
+
 /**
  * @swagger
  * /singleCompany:
@@ -104,7 +120,7 @@ companyRoute.get("/getCompany",studentAuth,async (req, res) => {
  *
  */
 
-companyRoute.get("/singleCompany",authAdmin, async(req, res) => {
+companyRoute.get("/singleCompany", async(req, res) => {
   const { companyName } = req.query;
 
   const properNameFormat = properName(companyName);
@@ -172,7 +188,7 @@ companyRoute.get("/getParticularCompany/:id" ,async (req, res) => {
  *        required : true
  *        content :
  *             
- *             multipart/form-data:
+ *             application/json:
  *                  schema:
  *                      $ref : "#/components/schema/newCompany"
  *
@@ -185,7 +201,7 @@ companyRoute.get("/getParticularCompany/:id" ,async (req, res) => {
  *            description: Internet server problem
  *
  */
-companyRoute.post("/createCompany",authAdmin,async (req, res) => {
+companyRoute.post("/createCompany",async (req, res) => {
   const {
     companyName,
     websiteUrl,
