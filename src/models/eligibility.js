@@ -2,14 +2,15 @@ const mongoose = require ("mongoose")
 mongoose.set('strictQuery', true);
 
 const eligibilitySchema = mongoose.Schema({
+ position_id:[{type:mongoose.Schema.Types.ObjectId,ref:"position",required:true}],
  degrees:{type:[String], required:true},
  streams: { type: String, required: true },
  graduationsYear: { type: Number, required: true },
  locationDomiciles: { type: [String], required: true },
  tenthPer: { type: Number, required: true },
  twelfthPer: { type: Number, required: true },
- gender:{type: String, enum: ["Male", "Female","Other"], required: true },
- position_id:[{type:mongoose.Schema.Types.ObjectId,ref:"position",required:true}],
+ gender:{type: String, enum: ["Male", "Female","Other"], required: true }
+
 })
 
 const eligibilityModel = mongoose.model('eligibility', eligibilitySchema)

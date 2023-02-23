@@ -1,6 +1,7 @@
 const express = require("express");
 const positionRoute = express.Router();
 const posModel= require("../models/positionModel") ;
+const authAdmin = require("../middleware/adminAuth");
 const studentAuth = require("../middleware/studentAuth") ;
 
 positionRoute.get("/",studentAuth,async(req,res)=>{
