@@ -8,6 +8,11 @@ eligRoute.get("/",async(req,res)=>{
 })
 
 eligRoute.post("/eligibility/:id",async(req,res)=>{
+    const {degrees,streams,graduationsYear,locationDomiciles,tenthPer,twelfthPer,gender} = req.body;
+
+    if ( !degrees || !streams || !graduationsYear || !locationDomiciles || !tenthPer || !twelfthPer || !gender ) {
+        res.status(401).send({ message: "fill all the details" })
+    }
     try {
         const {id} = req.params ;
         const position = await positionData.findById(id)

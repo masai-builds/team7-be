@@ -15,8 +15,12 @@ const positionSchema = mongoose.Schema({
     workingMode: { type: [String], required: true },
     relocation: { type: [String], required: true },
     bond: { type: String, required: false },
+<<<<<<< HEAD
+    additionalCriteria: { type: String, required: false }
+=======
     additionalCriteria: { type: String, required: false },
     eligibilityId:[{type:mongoose.Schema.Types.ObjectId,ref:"eligibility"}],
+>>>>>>> 6a9f457e241ca30d20651823e6f20c842bad8633
 })
 
 const positionModel = mongoose.model('position', positionSchema)

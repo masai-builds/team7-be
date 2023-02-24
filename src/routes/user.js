@@ -3,7 +3,6 @@ dotenv.config();
 const Router = require("express");
 const authRoute = Router();
 const bcrypt = require("bcrypt");
-const cookieParser = require("cookie-parser");
 const userModel = require("../models/userModel.js");
 const nodemailer = require("nodemailer");
 const jwt = require("jsonwebtoken");
@@ -11,10 +10,6 @@ const handlebars = require("handlebars");
 const fs = require("fs");
 const path = require("path");
 const {v4:uuidv4} = require("uuid") ;
-const finduserRole = require("../middleware/adminAuth") ;
-
-
-
 
 /**
  * @swagger
