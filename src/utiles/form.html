@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <form action="/createCompany" method="POST" enctype="multipart/form-data">
+        <input type="text" name="companyName" placeholder="Company Name">
+        <input type="text" name="websiteUrl" placeholder="Website URL">
+        <input type="text" name="companySegment" placeholder="Company Segment">
+        <input type="text" name="industry" placeholder="Industry">
+        <input type="text" name="description" placeholder="Description">
+        <input type="text" name="whyApply" placeholder="Why Apply">
+        <input type="text" name="linkdinUrl" placeholder="Linkedin URL">
+        <input type="text" name="glassdoorUrl" placeholder="Glassdoor URL">
+        <input type="text" name="ambitionBox" placeholder="Ambition Box">
+        <input type="text" name="leadSource" placeholder="Lead Source">
+        <input type="file" name="companyLogo">
+        <button type="submit">Submit</button>
+      </form>
+</body>
+</html>
+<script>
+    const form = document.querySelector('form');
+
+form.addEventListener('submit', async (event) => {
+  event.preventDefault(); 
+
+  
+  const formData = new FormData(event.target);
+  const formObject = {};
+
+  formData.forEach(function(value, key) {
+    formObject[key] = value;
+  });
+
+  console.log(formObject)
+
+  try {
+    const response = await fetch('http://localhost:8080/createCompany', {
+      method: 'POST',
+     
+      body: formObject
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to submit form');
+    }
+
+    const data = await response.json();
+
+    console.log(data);
+  } catch (error) {
+    console.error(error);
+  }
+});
+</script>

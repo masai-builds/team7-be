@@ -24,7 +24,7 @@ const storageImage = multer.diskStorage({
 
 const fileFilter = (req, file, cb) => {
   
-  if(file.mimetype == "image/jpeg" || file.mimetype == "image/png" || file.mimetype =="jpg"){
+  if(file.mimetype == "image/jpeg" || file.mimetypee == "image/png" || file.mimetype =="image/jpg"){
     
     cb(null, true)
   }else {
@@ -61,7 +61,7 @@ function properName(companyName) {
 /**
  * @swagger
  * components:
- *      schema :
+ *      schemas :
  *        newCompany :
  *                   type : object
  *                   properties :
@@ -87,8 +87,8 @@ function properName(companyName) {
  *                             type :  string
  *                      companyLogo :
  *                              type : string
- *                              format : binary
- *
+ *                              format: binary
+ *                              
  */
 
 // getCompanyDetails details//
@@ -199,10 +199,9 @@ companyRoute.get("/getParticularCompany/:id" ,async (req, res) => {
  *     requestBody :
  *        required : true
  *        content :
- *             
  *             multipart/form-data:
  *                  schema:
- *                      $ref : "#/components/schema/newCompany"
+ *                      $ref : "#/components/schemas/newCompany"
  *
  *     responses:
  *       200:
@@ -213,8 +212,10 @@ companyRoute.get("/getParticularCompany/:id" ,async (req, res) => {
  *            description: Internet server problem
  *
  */
-companyRoute.post("/createCompany",upload.single("companyLogo"),async (req, res) => {
+// upload.single("companyLogo")
+companyRoute.post("/createCompany", upload.single("companyLogo"),async (req, res) => {
 console.log(req.file)
+console.log(req.body)
     const {
       companyName,
       websiteUrl,
@@ -281,7 +282,7 @@ console.log(req.file)
  *            content :
  *               application/json:
  *                      schema:
- *                          $ref : "#/components/schema/newCompany"
+ *                          $ref : "#/components/schemas/newCompany"
  *     responses:
  *       200:
  *         description: Delete company details successfully
