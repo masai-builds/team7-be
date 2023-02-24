@@ -70,6 +70,7 @@ authRoute.post("/signup", async (req, res) => {
   const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/;
 
+  c
   if (userMail) {
     return res.send({ message: "user already registered" });
   }
@@ -105,7 +106,7 @@ authRoute.post("/signup", async (req, res) => {
     if (err) {
       return res.status(500).send({ message: "error occured" });
     }
-    const directory = path.join(__dirname, "..", "utiles", "signupEmail.html");
+    const directory = path.join(__dirname, "..", "utils", "signupEmail.html");
     const fileRead = fs.readFileSync(directory, "utf-8");
     const template = handlebars.compile(fileRead);
     const htmlToSend = template({ name: req.body.name, userId :  uuid });
@@ -198,9 +199,10 @@ authRoute.patch("/emailConfirm/:id", async (req, res) => {
 
 authRoute.post("/login", async (req, res) => {
   const { email, password } = req.body;
-  const validUser = await userModel.findOne({ email });
 
-  if (!email || !password) {
+  const validUser = await userModel.findOne({ email });
+  
+ if (!email || !password) {
     return res.status(422).send({ message: "fill all the details" });
   }
 
@@ -236,7 +238,7 @@ authRoute.post("/login", async (req, res) => {
 // forgetPassword //
 /**
  * @swagger
- * /auth/forgetpassword:
+ * /auth/forgetPassword:
  *   post:
  *     summary: user can reset or change password
  *     description: user forget password
@@ -275,7 +277,7 @@ authRoute.post("/forgetPassword", async (req, res) => {
   });
 
   // Set up the email transporter
-  const directory = path.join(__dirname, "..", "utiles", "resetPassword.html");
+  const directory = path.join(__dirname, "..", "utils", "resetPassword.html");
   const fileRead = fs.readFileSync(directory, "utf-8");
   const template = handlebars.compile(fileRead);
   const htmlToSend = template({ name: user.name, userId: user._id });

@@ -9,7 +9,11 @@ const eligibilitySchema = mongoose.Schema({
  tenthPer: { type: Number, required: true },
  twelfthPer: { type: Number, required: true },
  gender:{type: String, enum: ["Male", "Female","Other"], required: true }
+<<<<<<< HEAD
 
+=======
+ 
+>>>>>>> 6a9f457e241ca30d20651823e6f20c842bad8633
 })
 
 const eligibilityModel = mongoose.model('eligibility', eligibilitySchema)
