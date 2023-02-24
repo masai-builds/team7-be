@@ -67,20 +67,43 @@ function properName(companyName) {
  * @swagger
  * /getCompany:
  *   get:
- *     summary: Get a list of all users
- *     description: Returns a list of all users
+ *     summary: Get a list of all company
+ *     description: Returns a list of all company
  *     responses:
  *       200:
- *         description: A list of users
+ *         description: A list of company
  *       401:
  *          description: data not appropriate
  *       501 :
  *            description: Internet server problem
  *
  */
-companyRoute.get("/getCompany", async (req, res) => {
+
+companyRoute.get("/getCompany",async (req, res) => {
+
+  const getCompanyData = await companyData.find({});
+  return res.send(getCompanyData);
+});
+
+/**
+ * @swagger
+ * /getAll:
+ *   get:
+ *     summary: Get all integrated data of companies, positions and eligibility
+ *     description: Returns all integrated data of companies, positions and eligibility
+ *     responses:
+ *       200:
+ *         description: A list of companies, positions and eligibility
+ *       401:
+ *          description: data not appropriate
+ *       501 :
+ *            description: Internet server problem
+ *
+ */
+
+companyRoute.get("/getAll", async (req, res) => {
   try {
-    const companies = await companyData.find().populate({
+    const companies = await companyData.find({}).populate({
       path: "positionId",
       populate: {
         path: "eligibilityId",
@@ -93,11 +116,6 @@ companyRoute.get("/getCompany", async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
-// companyRoute.get("/getCompany",async (req, res) => {
-
-//   const getCompanyData = await companyData.find({});
-//   return res.send(getCompanyData);
-// });
 
 /**
  * @swagger
@@ -278,13 +296,21 @@ companyRoute.post("/createCompany",async (req, res) => {
  *            description: Internet server problem
  *
  */
-companyRoute.patch("/editCompany/:id",authAdmin, async (req, res) => {
+companyRoute.patch("/editCompany/:id", async (req, res) => {
+  console.log()
   const { id } = req.params;
   const { companyName, websiteUrl } = req.body;
-  const properNameFormat = properName(companyName);
-  if (!validUrl(websiteUrl)) {
-    return res.status(401).send({ meassge: "please enter valid company url" });
+
+  let properNameFormat ;
+  if(companyName){
+     properNameFormat = properName(companyName);
   }
+  if(websiteUrl){
+    if (!validUrl(websiteUrl)) {
+      return res.status(401).send({ meassge: "please enter valid company url" });
+    }
+  }
+ 
   await companyData
     .updateMany({ _id: id }, { ...req.body, companyName: properNameFormat })
     .then(() => {
@@ -321,7 +347,7 @@ companyRoute.patch("/editCompany/:id",authAdmin, async (req, res) => {
  *
  */
 
-companyRoute.delete("/deleteCompany/:id",authAdmin, async (req, res) => {
+companyRoute.delete("/deleteCompany/:id", async (req, res) => {
   const { id } = req.params;
 
   await companyData

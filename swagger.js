@@ -12,7 +12,7 @@ const swaggerOption = {
             description: 'A sample API for testing Swagger',
         }
     },
-    apis: ["./src/routes/user.js", "./src/routes/newCompany.js"],
+    apis: ["./src/routes/user.js", "./src/routes/newCompany.js", "./src/routes/position.js", "./src/routes/eligibility.js"],
 }
 
 const swaggerSpec = swaggerDoc(swaggerOption)
