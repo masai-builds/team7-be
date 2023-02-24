@@ -4,7 +4,6 @@ const posModel = require("../models/positionModel");
 const studentAuth = require("../middleware/studentAuth");
 const companyData = require("../models/newCompanyModel");
 
-
 /**
  * @swagger
  * components:
@@ -35,8 +34,8 @@ const companyData = require("../models/newCompanyModel");
  *                      relocation:
  *                             type :  [string]
  *                      bond :
- *                             type : string 
- *                      additionalCriteria : 
+ *                             type : string
+ *                      additionalCriteria :
  *                             type : string
  */
 
@@ -74,7 +73,7 @@ positionRoute.get("/position", async (req, res) => {
  *              schema :
  *               type: string
  *
- *     
+ *
  *     responses:
  *       200:
  *         description:  position details successfully
@@ -171,13 +170,12 @@ positionRoute.post("/positions/:id", async (req, res) => {
 
     company.positionId.push(savedPosition);
     const savedCompany = await company.save();
-    return res.status(201).send({message : "Position save successfully"});
+    return res.status(201).send({ message: "Position save successfully" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server Error" });
   }
 });
-
 
 /**
  * @swagger

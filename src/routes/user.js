@@ -3,18 +3,13 @@ dotenv.config();
 const Router = require("express");
 const authRoute = Router();
 const bcrypt = require("bcrypt");
-const cookieParser = require("cookie-parser");
 const userModel = require("../models/userModel.js");
 const nodemailer = require("nodemailer");
 const jwt = require("jsonwebtoken");
 const handlebars = require("handlebars");
 const fs = require("fs");
 const path = require("path");
-const {v4:uuidv4} = require("uuid") ;
-const finduserRole = require("../middleware/adminAuth") ;
-
-
-
+const { v4: uuidv4 } = require("uuid");
 
 /**
  * @swagger
@@ -33,7 +28,7 @@ const finduserRole = require("../middleware/adminAuth") ;
  *                              type :  string
  *                      role :
  *                              type :  string
- *                     
+ *
  *
  *         login :
  *                  type : object
@@ -71,16 +66,18 @@ const finduserRole = require("../middleware/adminAuth") ;
 authRoute.post("/signup", async (req, res) => {
   const userMail = await userModel.findOne({ email: req.body.email });
   const { email, password, rePassword } = req.body;
-  const uuid = uuidv4() ;
+  const uuid = uuidv4();
   const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/;
 
-  c
+  c;
   if (userMail) {
     return res.send({ message: "user already registered" });
   }
-   if (password !== rePassword) {
-    return res.status(400) .send({ message: "Please make sure your passwords match." });
+  if (password !== rePassword) {
+    return res
+      .status(400)
+      .send({ message: "Please make sure your passwords match." });
   }
 
   if (!passwordRegex.test(password)) {
@@ -104,7 +101,7 @@ authRoute.post("/signup", async (req, res) => {
     ...req.body,
     password: Pass,
     rePassword: rePass,
-    uuid
+    uuid,
   });
 
   user.save((err, success) => {
@@ -114,8 +111,8 @@ authRoute.post("/signup", async (req, res) => {
     const directory = path.join(__dirname, "..", "utils", "signupEmail.html");
     const fileRead = fs.readFileSync(directory, "utf-8");
     const template = handlebars.compile(fileRead);
-    const htmlToSend = template({ name: req.body.name, userId :  uuid });
-    
+    const htmlToSend = template({ name: req.body.name, userId: uuid });
+
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -129,7 +126,7 @@ authRoute.post("/signup", async (req, res) => {
       subject: "Signup Successfully",
       html: htmlToSend,
     };
-   
+
     transporter.sendMail(mailOptions, (err, info) => {
       if (err) {
         return res.status(500).send({ message: "Error sending email" });
@@ -145,7 +142,7 @@ authRoute.post("/signup", async (req, res) => {
  * @swagger
  * /auth/emailConform/{uuid}:
  *   patch:
- *     summary: Email verification 
+ *     summary: Email verification
  *     description: Email verification
  *     parameters :
  *            - name : uuid
@@ -166,17 +163,18 @@ authRoute.post("/signup", async (req, res) => {
  */
 
 authRoute.patch("/emailConfirm/:id", async (req, res) => {
-  const {id} = req.params ;
-   try {
-    const user =  await userModel.findOneAndUpdate({uuid : id}, {$set : { emailConfirmed : true } });
-    user.save() ;
-    return res.status(201).send({message : "Email verification successs"})
-   } catch (error) {
-    return res.status(401).send({meassge : "Email not verified"})
-   }
-  
-
-})
+  const { id } = req.params;
+  try {
+    const user = await userModel.findOneAndUpdate(
+      { uuid: id },
+      { $set: { emailConfirmed: true } }
+    );
+    user.save();
+    return res.status(201).send({ message: "Email verification successs" });
+  } catch (error) {
+    return res.status(401).send({ meassge: "Email not verified" });
+  }
+});
 
 // login //
 /**
@@ -206,8 +204,8 @@ authRoute.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   const validUser = await userModel.findOne({ email });
-  
- if (!email || !password) {
+
+  if (!email || !password) {
     return res.status(422).send({ message: "fill all the details" });
   }
 
@@ -216,7 +214,9 @@ authRoute.post("/login", async (req, res) => {
   }
 
   if (!validUser.emailConfirmed) {
-    return res.status(401).send({ message: "Please confirm your email before logging in" });
+    return res
+      .status(401)
+      .send({ message: "Please confirm your email before logging in" });
   }
 
   const isMatch = await bcrypt.compare(password, validUser.password);
@@ -226,18 +226,21 @@ authRoute.post("/login", async (req, res) => {
   }
 
   // authorize based on user role
-   const token = jwt.sign({
+  const token = jwt.sign(
+    {
       name: validUser.name,
-      role : validUser.role
-    },process.env.JWT_KEY);
+      role: validUser.role,
+    },
+    process.env.JWT_KEY
+  );
 
   // cookiegenerate
   res.cookie("usercookieAuth", token, {
     expires: new Date(Date.now() + 9000000),
     httpOnly: true,
   });
-  
-  res.status(201).send({ meassge : "Login successful" });
+
+  res.status(201).send({ meassge: "Login successful" });
 });
 
 // forgetPassword //
@@ -334,11 +337,11 @@ authRoute.post("/forgetPassword", async (req, res) => {
  *               application/json:
  *                      schema:
  *                        type : object
- *                        properties : 
- *                            password : 
+ *                        properties :
+ *                            password :
  *                              type : string
- *                            rePassword : 
- *                              type : string 
+ *                            rePassword :
+ *                              type : string
  *     responses:
  *       200:
  *         description: Delete company details successfully

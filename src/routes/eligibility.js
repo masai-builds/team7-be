@@ -1,6 +1,6 @@
 const express = require("express");
-const eligibilityModel= require("../models/eligibility")
-const eligRoute= express.Router();
+const eligibilityModel = require("../models/eligibility");
+const eligRoute = express.Router();
 const positionData = require("../models/positionModel");
 
 /**
@@ -24,9 +24,9 @@ const positionData = require("../models/positionModel");
  *                            type :  number
  *                      gender :
  *                             type :  string
- *                             enum : 
+ *                             enum :
  *                                - Male
- *                                - Female 
+ *                                - Female
  *                                - Other
  */
 
@@ -45,20 +45,20 @@ const positionData = require("../models/positionModel");
  *            description: Internet server problem
  *
  */
-eligRoute.get("/eligibility",async(req,res)=>{
-    const data=await eligibilityModel.find()
-    res.status(200).send({message:"list of positions", data})
-})
+eligRoute.get("/eligibility", async (req, res) => {
+  const data = await eligibilityModel.find();
+  res.status(200).send({ message: "list of positions", data });
+});
 /**
  * @swagger
  * /eligibility/{id}:
  *   post:
- *     summary: post eligibility to particular position 
- *     description: post eligibility to particular position 
+ *     summary: post eligibility to particular position
+ *     description: post eligibility to particular position
  *     parameters :
  *            - name : id
  *              in : path
- *              description  : id of position - to create eligibility of that particular position 
+ *              description  : id of position - to create eligibility of that particular position
  *              required: true
  *              minimum : 1
  *              schema :
@@ -79,28 +79,44 @@ eligRoute.get("/eligibility",async(req,res)=>{
  *            description: Internet server problem
  *
  */
-eligRoute.post("/eligibility/:id",async(req,res)=>{
-    try {
-        const {id} = req.params ;
-        const position = await positionData.findById(id)
-        if(!position){
-            return res.status(401).send({message: "Position not found"})
-        }
-        const newEligibility = new eligibilityModel(req.body)
-        const saveEligibility = await newEligibility.save() ;
-
-        position.eligibilityId.push(saveEligibility) ;
-        const savePositions = await position.save() ;
-        return res.status(200).send({message : "Eligibility save!",savePositions })
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Server Error" });
+eligRoute.post("/eligibility/:id", async (req, res) => {
+  try {
+    const {
+      degrees,
+      streams,
+      graduationsYear,
+      locationDomiciles,
+      tenthPer,
+      twelfthPer,
+      gender,
+    } = req.body;
+    const { id } = req.params;
+    if (
+      !degrees ||
+      !streams ||
+      !graduationsYear ||
+      !locationDomiciles ||
+      !tenthPer ||
+      !twelfthPer ||
+      !gender
+    ) {
+      res.status(401).send({ message: "fill all the details" });
     }
- 
-    
-})
 
-module.exports = eligRoute ;
+    const position = await positionData.findById(id);
+    if (!position) {
+      return res.status(401).send({ message: "Position not found" });
+    }
+    const newEligibility = new eligibilityModel(req.body);
+    const saveEligibility = await newEligibility.save();
 
+    position.eligibilityId.push(saveEligibility);
+    const savePositions = await position.save();
+    return res.status(200).send({ message: "Eligibility save!" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
 
-
+module.exports = eligRoute;

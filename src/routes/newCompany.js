@@ -4,7 +4,7 @@ const Router = require("express");
 const companyRoute = Router();
 const companyData = require("../models/newCompanyModel");
 const authAdmin = require("../middleware/adminAuth");
-const studentAuth = require("../middleware/studentAuth") ;
+const studentAuth = require("../middleware/studentAuth");
 // check valid url function //
 
 function validUrl(url) {
@@ -26,7 +26,6 @@ function properName(companyName) {
     return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
   });
 }
-
 
 //swaggerSchema //
 /**
@@ -79,8 +78,7 @@ function properName(companyName) {
  *
  */
 
-companyRoute.get("/getCompany",async (req, res) => {
-
+companyRoute.get("/getCompany", async (req, res) => {
   const getCompanyData = await companyData.find({});
   return res.send(getCompanyData);
 });
@@ -138,7 +136,7 @@ companyRoute.get("/getAll", async (req, res) => {
  *
  */
 
-companyRoute.get("/singleCompany", async(req, res) => {
+companyRoute.get("/singleCompany", async (req, res) => {
   const { companyName } = req.query;
 
   const properNameFormat = properName(companyName);
@@ -158,7 +156,6 @@ companyRoute.get("/singleCompany", async(req, res) => {
     }
     return res.status(201).send(items);
   });
-
 });
 
 // get particular company by id //
@@ -177,7 +174,7 @@ companyRoute.get("/singleCompany", async(req, res) => {
  *              schema :
  *               type: string
  *
- *     
+ *
  *     responses:
  *       200:
  *         description:  company details successfully
@@ -187,11 +184,11 @@ companyRoute.get("/singleCompany", async(req, res) => {
  *            description: Internet server problem
  *
  */
-companyRoute.get("/getParticularCompany/:id" ,async (req, res) => {
-  const {id} = req.params ;
-  
-  const getParticularCompany = await companyData.findById({_id : id});
-  
+companyRoute.get("/getParticularCompany/:id", async (req, res) => {
+  const { id } = req.params;
+
+  const getParticularCompany = await companyData.findById({ _id: id });
+
   return res.send(getParticularCompany);
 });
 
@@ -205,7 +202,7 @@ companyRoute.get("/getParticularCompany/:id" ,async (req, res) => {
  *     requestBody :
  *        required : true
  *        content :
- *             
+ *
  *             application/json:
  *                  schema:
  *                      $ref : "#/components/schema/newCompany"
@@ -219,7 +216,7 @@ companyRoute.get("/getParticularCompany/:id" ,async (req, res) => {
  *            description: Internet server problem
  *
  */
-companyRoute.post("/createCompany",async (req, res) => {
+companyRoute.post("/createCompany", async (req, res) => {
   const {
     companyName,
     websiteUrl,
@@ -233,37 +230,34 @@ companyRoute.post("/createCompany",async (req, res) => {
     leadSource,
   } = req.body;
 
-    if (
-      !companyName ||
-      !websiteUrl ||
-      !companySegment ||
-      !industry ||
-      !description ||
-      !whyApply ||
-      !leadSource
-    ) {
-      return res.status(404).send({ message: "Please fill required data" });
-    }
-    if (!validUrl(websiteUrl)) {
-      return res
-        .status(401)
-        .send({ meassge: "please enter valid company url" });
-    }
-
-    const toTitleCase = properName(companyName);
-
-    new companyData({ ...req.body, companyName: toTitleCase }).save(
-      (err, success) => {
-        if (err) {
-          return res.status(401).send({ message: "data not save in database" });
-        }
-        return res
-          .status(201)
-          .send({ message: "New company added successfully" });
-      }
-    );
+  if (
+    !companyName ||
+    !websiteUrl ||
+    !companySegment ||
+    !industry ||
+    !description ||
+    !whyApply ||
+    !leadSource
+  ) {
+    return res.status(404).send({ message: "Please fill required data" });
   }
-);
+  if (!validUrl(websiteUrl)) {
+    return res.status(401).send({ meassge: "please enter valid company url" });
+  }
+
+  const toTitleCase = properName(companyName);
+
+  new companyData({ ...req.body, companyName: toTitleCase }).save(
+    (err, success) => {
+      if (err) {
+        return res.status(401).send({ message: "data not save in database" });
+      }
+      return res
+        .status(201)
+        .send({ message: "New company added successfully" });
+    }
+  );
+});
 
 // upadte company details //
 /**
@@ -297,20 +291,22 @@ companyRoute.post("/createCompany",async (req, res) => {
  *
  */
 companyRoute.patch("/editCompany/:id", async (req, res) => {
-  console.log()
+  console.log();
   const { id } = req.params;
   const { companyName, websiteUrl } = req.body;
 
-  let properNameFormat ;
-  if(companyName){
-     properNameFormat = properName(companyName);
+  let properNameFormat;
+  if (companyName) {
+    properNameFormat = properName(companyName);
   }
-  if(websiteUrl){
+  if (websiteUrl) {
     if (!validUrl(websiteUrl)) {
-      return res.status(401).send({ meassge: "please enter valid company url" });
+      return res
+        .status(401)
+        .send({ meassge: "please enter valid company url" });
     }
   }
- 
+
   await companyData
     .updateMany({ _id: id }, { ...req.body, companyName: properNameFormat })
     .then(() => {
