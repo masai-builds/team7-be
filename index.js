@@ -12,6 +12,7 @@ const dotenv = require("dotenv");
 const swaggerUi = require('swagger-ui-express') ;
 const swaggerSpec = require("./swagger") ;
 const busboyBodyParser = require('busboy-body-parser');
+const logger = require('./src/database/logger');
 dotenv.config({ path: "./src/config/.env" });
 
 
@@ -36,6 +37,5 @@ app.get("/", (req, res) => {
 
 app.listen(process.env.PORT, async () => {
   await connection;
-  
-  console.log(`listening on port ${process.env.PORT}`);
+  logger.log('info',`listening on port ${process.env.PORT}`);
 });
