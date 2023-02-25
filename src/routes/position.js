@@ -30,7 +30,7 @@ const companyData = require("../models/newCompanyModel");
  *                      rounds :
  *                             type :  [string]
  *                      workingMode:
- *                             type :  [string]
+ *                             type :  string
  *                      relocation:
  *                             type :  [string]
  *                      bond :
@@ -56,6 +56,7 @@ const companyData = require("../models/newCompanyModel");
  */
 positionRoute.get("/position", async (req, res) => {
   const Data = await posModel.find();
+
   res.status(200).send({ message: "list of positions", Data });
 });
 /**
@@ -85,7 +86,9 @@ positionRoute.get("/position", async (req, res) => {
  */
 positionRoute.get("/position/:id", async (req, res) => {
   let { id } = req.params;
-  const Data = await posModel.findOne({ _id: id });
+  const Data = await posModel.findOne({ _id: id }).populate({
+    path: "eligibilityId",
+  });
   res.status(200).send({ message: " data of this position", Data });
 });
 /**
@@ -165,11 +168,14 @@ positionRoute.post("/positions/:id", async (req, res) => {
       return res.status(404).json({ message: "Company not found" });
     }
 
-    const position = new posModel(req.body);
+    const position = new posModel({
+      ...req.body,
+      companyName: company.companyName,
+      companyId: id,
+    });
     const savedPosition = await position.save();
 
-    company.positionId.push(savedPosition);
-    const savedCompany = await company.save();
+    // const savedCompany = await company.save();
     return res.status(201).send({ message: "Position save successfully" });
   } catch (err) {
     console.error(err);
@@ -208,10 +214,17 @@ positionRoute.post("/positions/:id", async (req, res) => {
  *
  */
 positionRoute.patch("/updatePosition/:id", async (req, res) => {
-  let { id } = req.params;
-  const updateData = req.body;
-  const Data = await posModel.findByIdAndUpdate(id, updateData, { new: true });
-  res.status(200).send({ message: "position updated successfully", Data });
+  try {
+    let { id } = req.params;
+    const updateData = req.body;
+    const Data = await posModel.findByIdAndUpdate(id, updateData, {
+      new: true,
+    });
+    res.status(200).send({ message: "position updated successfully" });
+  } catch (error) {
+    console.log(e);
+    res.status(401).send({ message: "position updated unsuccessfully" });
+  }
 });
 
 /**

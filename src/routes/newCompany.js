@@ -78,9 +78,10 @@ function properName(companyName) {
  *
  */
 
-companyRoute.get("/getCompany", async (req, res) => {
+companyRoute.get("/getCompany",async (req, res) => {
+
   const getCompanyData = await companyData.find({});
-  return res.send(getCompanyData);
+  return res.status(201).send({ message: "list of companies", getCompanyData });
 });
 
 /**
@@ -291,7 +292,7 @@ companyRoute.post("/createCompany", async (req, res) => {
  *
  */
 companyRoute.patch("/editCompany/:id", async (req, res) => {
-  console.log();
+ 
   const { id } = req.params;
   const { companyName, websiteUrl } = req.body;
 

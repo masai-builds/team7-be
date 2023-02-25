@@ -47,7 +47,7 @@ const positionData = require("../models/positionModel");
  */
 eligRoute.get("/eligibility", async (req, res) => {
   const data = await eligibilityModel.find();
-  res.status(200).send({ message: "list of positions", data });
+  res.status(200).send({ message: "list of Eligibility", data });
 });
 /**
  * @swagger
