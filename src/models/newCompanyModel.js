@@ -45,7 +45,7 @@ const CompanySchema = mongoose.Schema({
     type: String
      
   },
-  positionId : [{type : mongoose.Schema.Types.ObjectId, ref :"position"}]
+  
 });
 
 const companyModel = mongoose.model("company", CompanySchema);
