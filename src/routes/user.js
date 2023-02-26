@@ -9,12 +9,8 @@ const jwt = require("jsonwebtoken");
 const handlebars = require("handlebars");
 const fs = require("fs");
 const path = require("path");
-<<<<<<< HEAD
 const logger = require("../database/db")
 const {v4:uuidv4} = require("uuid") ;
-=======
-const { v4: uuidv4 } = require("uuid");
->>>>>>> 79a216b1203fbbb65029e79410127d1d05509ee6
 
 /**
  * @swagger
@@ -69,7 +65,6 @@ const { v4: uuidv4 } = require("uuid");
 
 // signup //
 authRoute.post("/signup", async (req, res) => {
-<<<<<<< HEAD
   try {
     const userMail = await userModel.findOne({ email: req.body.email });
     const { email, password, rePassword } = req.body;
@@ -107,72 +102,6 @@ authRoute.post("/signup", async (req, res) => {
     });
 
     user.save(async (err, success) => {
-=======
-  const userMail = await userModel.findOne({ email: req.body.email });
-  const { email, password, rePassword } = req.body;
-  const uuid = uuidv4();
-  const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/;
-
-  c;
-  if (userMail) {
-    return res.send({ message: "user already registered" });
-  }
-  if (password !== rePassword) {
-    return res
-      .status(400)
-      .send({ message: "Please make sure your passwords match." });
-  }
-
-  if (!passwordRegex.test(password)) {
-    return res.status(400).send({
-      message:
-        "Password must contain at least 8 characters, including at least 1 number, 1 lowercase letter, and 1 uppercase letter.",
-    });
-  }
-
-  if (!emailReg.test(email)) {
-    return res
-      .status(400)
-      .send({ message: "Please provide a valid email address." });
-  }
-
-  const salt = await bcrypt.genSaltSync(10);
-  const Pass = await bcrypt.hash(req.body.password, salt);
-  const rePass = await bcrypt.hash(req.body.rePassword, salt);
-
-  const user = new userModel({
-    ...req.body,
-    password: Pass,
-    rePassword: rePass,
-    uuid,
-  });
-
-  user.save((err, success) => {
-    if (err) {
-      return res.status(500).send({ message: "error occured" });
-    }
-    const directory = path.join(__dirname, "..", "utils", "signupEmail.html");
-    const fileRead = fs.readFileSync(directory, "utf-8");
-    const template = handlebars.compile(fileRead);
-    const htmlToSend = template({ name: req.body.name, userId: uuid });
-
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.USER_EMAIL,
-        pass: process.env.USER_PASS,
-      },
-    });
-    const mailOptions = {
-      from: process.env.USER_EMAIL,
-      to: email,
-      subject: "Signup Successfully",
-      html: htmlToSend,
-    };
-
-    transporter.sendMail(mailOptions, (err, info) => {
->>>>>>> 79a216b1203fbbb65029e79410127d1d05509ee6
       if (err) {
         logger.error('Error occurred during signup', { error: err });
         return res.status(500).send({ message: "error occured" });
@@ -279,32 +208,16 @@ authRoute.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-<<<<<<< HEAD
     const validUser = await userModel.findOne({ email });
-=======
-  const validUser = await userModel.findOne({ email });
-
-  if (!email || !password) {
-    return res.status(422).send({ message: "fill all the details" });
-  }
->>>>>>> 79a216b1203fbbb65029e79410127d1d05509ee6
 
     if (!email || !password) {
       return res.status(422).send({ message: "fill all the details" });
     }
 
-<<<<<<< HEAD
     if (!validUser) {
       logger.error('User failed to login', { email: email });
       return res.status(401).send({ message: "Invalid Credentials" });
     }
-=======
-  if (!validUser.emailConfirmed) {
-    return res
-      .status(401)
-      .send({ message: "Please confirm your email before logging in" });
-  }
->>>>>>> 79a216b1203fbbb65029e79410127d1d05509ee6
 
     if (!validUser.emailConfirmed) {
       return res.status(401).send({ message: "Please confirm your email before logging in" });
@@ -312,7 +225,6 @@ authRoute.post("/login", async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, validUser.password);
 
-<<<<<<< HEAD
     if (!isMatch) {
       return res.status(401).send({ message: "Invalid Credentials" });
     }
@@ -334,24 +246,6 @@ authRoute.post("/login", async (req, res) => {
     logger.error('Error occurred during login', { error: error });
     res.status(500).send({ message: "Something went wrong" });
   }
-=======
-  // authorize based on user role
-  const token = jwt.sign(
-    {
-      name: validUser.name,
-      role: validUser.role,
-    },
-    process.env.JWT_KEY
-  );
-
-  // cookiegenerate
-  res.cookie("usercookieAuth", token, {
-    expires: new Date(Date.now() + 9000000),
-    httpOnly: true,
-  });
-
-  res.status(201).send({ meassge: "Login successful" });
->>>>>>> 79a216b1203fbbb65029e79410127d1d05509ee6
 });
 
 
