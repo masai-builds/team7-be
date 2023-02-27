@@ -4,35 +4,8 @@ dotenv.config();
 const Router = require("express");
 const companyRoute = Router();
 const companyData = require("../models/newCompanyModel");
-const multer = require("multer");
-const path = require("path");
 
-
-
-
-
-// multer //
-const storageImage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    
-    cb(null, path.join(__dirname, "..", "..", "upload"));
-  },
-  filename: function (req, file, cb) {
-    cb(null, new Date().toISOString() + file.originalname);
-  },
-});
-
-const fileFilter = (req, file, cb) => {
-  
-  if(file.mimetype == "image/jpeg" || file.mimetypee == "image/png" || file.mimetype =="image/jpg"){
-    
-    cb(null, true)
-  }else {
-    cb(null, false)
-  }
-}
-
-const upload = multer({ storage: storageImage , fileFilter : fileFilter});
+const {client, companyCacheData, particularCompanyCache } = require("../../redis");
 
 // check valid url function //
 
@@ -55,7 +28,6 @@ function properName(companyName) {
     return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
   });
 }
-
 
 //swaggerSchema //
 /**
@@ -88,7 +60,7 @@ function properName(companyName) {
  *                      companyLogo :
  *                              type : string
  *                              format: binary
- *                              
+ *
  */
 
 // getCompanyDetails details//
@@ -108,11 +80,25 @@ function properName(companyName) {
  *
  */
 
-companyRoute.get("/getCompany" ,async (req, res) => {
-  const getCompanyData = await companyData.find({});
-  console.log(getCompanyData)
-  return res.status(200).json(getCompanyData);
+companyRoute.get("/getCompany", companyCacheData, async (req, res, next) => {
+  try {
+    console.log("fetching data from database.......");
+    const companyDataResult = await companyData.find({});
+    if (companyDataResult.length == 0) {
+      return res.status(404).send({ messge: "no data found" });
+    }
+
+    client.setEx("companyData", 60, JSON.stringify(companyDataResult));
+    console.log("Set repo value in Redis");
+    return res.status(201).send({message : "company Data from database", companyDataResult});
+  } catch (error) {
+    console.log(error);
+    next(error);
+  } finally {
+    client.quit();
+  }
 });
+
 /**
  * @swagger
  * /singleCompany:
@@ -134,6 +120,8 @@ companyRoute.get("/getCompany" ,async (req, res) => {
  *
  */
 
+
+
 companyRoute.get("/singleCompany", async (req, res) => {
   const { companyName } = req.query;
 
@@ -154,7 +142,6 @@ companyRoute.get("/singleCompany", async (req, res) => {
     }
     return res.status(201).send(items);
   });
-
 });
 
 // get particular company by id //
@@ -173,7 +160,7 @@ companyRoute.get("/singleCompany", async (req, res) => {
  *              schema :
  *               type: string
  *
- *     
+ *
  *     responses:
  *       200:
  *         description:  company details successfully
@@ -183,11 +170,17 @@ companyRoute.get("/singleCompany", async (req, res) => {
  *            description: Internet server problem
  *
  */
-companyRoute.get("/getParticularCompany/:id" ,async (req, res) => {
-  const {id} = req.params ;
+companyRoute.get("/getParticularCompany/:id",particularCompanyCache, async (req, res) => {
+  const { id } = req.params;
+
+  const getParticularCompany = await companyData.findById({ _id: id });
+  if(getParticularCompany.length == 0){
+    return res.status(401).send({message : "check id or data not found"})
+  }
+  client.setEx("singleCompany", 60, JSON.stringify(getParticularCompany))
   
-  const getParticularCompany = await companyData.findById({_id : id});
-  return res.send(getParticularCompany);
+  console.log("Set repo value in Redis");
+  return res.status(201).send({message : "company Data from database", getParticularCompany});
 });
 
 // CreateNewCompany details //
@@ -214,53 +207,50 @@ companyRoute.get("/getParticularCompany/:id" ,async (req, res) => {
  *
  */
 // upload.single("companyLogo")
-companyRoute.post("/createCompany", upload.single("companyLogo"),async (req, res) => {
-console.log(req.file)
-console.log(req.body)
-    const {
-      companyName,
-      websiteUrl,
-      companySegment,
-      industry,
-      description,
-      whyApply,
-      linkdinUrl,
-      glassdoorUrl,
-      ambitionBox,
-      leadSource,
-    } = req.body;
+companyRoute.post("/createCompany", async (req, res) => {
+  console.log(req.file);
+  console.log(req.body);
+  const {
+    companyName,
+    websiteUrl,
+    companySegment,
+    industry,
+    description,
+    whyApply,
+    linkdinUrl,
+    glassdoorUrl,
+    ambitionBox,
+    leadSource,
+  } = req.body;
 
-    if (
-      !companyName ||
-      !websiteUrl ||
-      !companySegment ||
-      !industry ||
-      !description ||
-      !whyApply ||
-      !leadSource
-    ) {
-      return res.status(404).send({ message: "Please fill required data" });
-    }
-    if (!validUrl(websiteUrl)) {
-      return res
-        .status(401)
-        .send({ meassge: "please enter valid company url" });
-    }
-
-    const toTitleCase = properName(companyName);
-
-    new companyData({ ...req.body, companyName: toTitleCase }).save(
-      (err, success) => {
-        if (err) {
-          return res.status(401).send({ message: "data not save in database" });
-        }
-        return res
-          .status(201)
-          .send({ message: "New company added successfully" });
-      }
-    );
+  if (
+    !companyName ||
+    !websiteUrl ||
+    !companySegment ||
+    !industry ||
+    !description ||
+    !whyApply ||
+    !leadSource
+  ) {
+    return res.status(404).send({ message: "Please fill required data" });
   }
-);
+  if (!validUrl(websiteUrl)) {
+    return res.status(401).send({ meassge: "please enter valid company url" });
+  }
+
+  const toTitleCase = properName(companyName);
+
+  new companyData({ ...req.body, companyName: toTitleCase }).save(
+    (err, success) => {
+      if (err) {
+        return res.status(401).send({ message: "data not save in database" });
+      }
+      return res
+        .status(201)
+        .send({ message: "New company added successfully" });
+    }
+  );
+});
 
 // upadte company details //
 /**
