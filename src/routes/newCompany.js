@@ -96,11 +96,11 @@ function properName(companyName) {
  * @swagger
  * /getCompany:
  *   get:
- *     summary: Get a list of all users
- *     description: Returns a list of all users
+ *     summary: Get a list of all companies
+ *     description: Returns a list of all companies
  *     responses:
  *       200:
- *         description: A list of users
+ *         description: A list of companies
  *       401:
  *          description: data not appropriate
  *       501 :
@@ -110,7 +110,8 @@ function properName(companyName) {
 
 companyRoute.get("/getCompany" ,async (req, res) => {
   const getCompanyData = await companyData.find({});
-  return res.send(getCompanyData);
+  console.log(getCompanyData)
+  return res.status(200).json(getCompanyData);
 });
 /**
  * @swagger
@@ -199,7 +200,7 @@ companyRoute.get("/getParticularCompany/:id" ,async (req, res) => {
  *     requestBody :
  *        required : true
  *        content :
- *             multipart/form-data:
+ *             application/json:
  *                  schema:
  *                      $ref : "#/components/schemas/newCompany"
  *

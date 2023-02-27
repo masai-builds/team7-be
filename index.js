@@ -6,8 +6,8 @@ const bodyParser = require("body-parser");
 const authRoute = require("./src/routes/user");
 const companyRoute = require("./src/routes/newCompany")
 const dotenv = require("dotenv");
-const swaggerUi = require('swagger-ui-express') ;
-const swaggerSpec = require("./swagger") ;
+
+const {swaggerUi, swaggerSpec} = require("./swagger") ;
 const busboyBodyParser = require('busboy-body-parser');
 dotenv.config({ path: "./src/config/.env" });
 
