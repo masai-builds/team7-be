@@ -12,7 +12,7 @@ const dotenv = require("dotenv");
 const swaggerUi = require('swagger-ui-express') ;
 const swaggerSpec = require("./swagger") ;
 const busboyBodyParser = require('busboy-body-parser');
-const logger = require('./src/database/logger');
+const logger = require('./src/routes/logger');
 dotenv.config({ path: "./src/config/.env" });
 
 app.use(express.urlencoded({ extended: true }));

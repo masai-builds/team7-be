@@ -9,7 +9,7 @@ const jwt = require("jsonwebtoken");
 const handlebars = require("handlebars");
 const fs = require("fs");
 const path = require("path");
-const logger = require("../database/db")
+const logger = require("./logger")
 const {v4:uuidv4} = require("uuid") ;
 
 /**
@@ -103,7 +103,6 @@ authRoute.post("/signup", async (req, res) => {
 
     user.save(async (err, success) => {
       if (err) {
-        logger.error('Error occurred during signup', { error: err });
         return res.status(500).send({ message: "error occured" });
       }
 
@@ -241,7 +240,7 @@ authRoute.post("/login", async (req, res) => {
       httpOnly: true,
     });
     logger.info('User logged in successfully', { userId: validUser._id });
-    res.status(201).send({ message: "Login successful" });
+    res.status(201).send({ message: "Login successful" ,token});
   } catch (error) {
     logger.error('Error occurred during login', { error: error });
     res.status(500).send({ message: "Something went wrong" });
@@ -365,6 +364,34 @@ authRoute.patch("/resetPassword/:id", async (req, res) => {
   if (!oldUser) {
     return res.json({ status: "User Not Exists!!" });
   }
+  if (password !== rePassword) {
+    return res.status(401).send({ meassge: "Password not same " });
+  }
+  try {
+    const salt = await bcrypt.genSaltSync(10);
+    const Pass = await bcrypt.hash(password, salt);
+    const rePass = await bcrypt.hash(rePassword, salt);
+
+    const setNewPass = await userModel.findByIdAndUpdate(
+      { _id: id },
+      { $set: { password: Pass, rePassword: rePass } }
+    );
+    setNewPass.save();
+    res.status(201).send({ message: "Password updated successfully" });
+  } catch (error) {
+    res.json({ status: "Something Went Wrong" });
+  }
+});
+
+
+//change password
+authRoute.patch("/changePassword/:id", async (req, res) => {
+  const { id } = req.params;
+  const { password, rePassword } = req.body;
+
+  const oldUser = await userModel.findOne({ _id: id });
+  console.log(oldUser)
+
   if (password !== rePassword) {
     return res.status(401).send({ meassge: "Password not same " });
   }
