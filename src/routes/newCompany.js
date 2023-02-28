@@ -5,6 +5,9 @@ const companyRoute = Router();
 const companyData = require("../models/newCompanyModel");
 const authAdmin = require("../middleware/adminAuth");
 const studentAuth = require("../middleware/studentAuth");
+
+const {client, companyCacheData, particularCompanyCache } = require("../../redis");
+
 // check valid url function //
 
 function validUrl(url) {
@@ -31,7 +34,7 @@ function properName(companyName) {
 /**
  * @swagger
  * components:
- *      schema :
+ *      schemas :
  *        newCompany :
  *                   type : object
  *                   properties :
@@ -57,7 +60,7 @@ function properName(companyName) {
  *                             type :  string
  *                      companyLogo :
  *                              type : string
- *                              format : binary
+ *                              format: binary
  *
  */
 
@@ -66,11 +69,11 @@ function properName(companyName) {
  * @swagger
  * /getCompany:
  *   get:
- *     summary: Get a list of all company
- *     description: Returns a list of all company
+ *     summary: Get a list of all companies
+ *     description: Returns a list of all companies
  *     responses:
  *       200:
- *         description: A list of company
+ *         description: A list of companies
  *       401:
  *          description: data not appropriate
  *       501 :
@@ -78,41 +81,22 @@ function properName(companyName) {
  *
  */
 
-companyRoute.get("/getCompany",async (req, res) => {
-
-  const getCompanyData = await companyData.find({});
-  return res.status(201).send({ message: "list of companies", getCompanyData });
-});
-
-/**
- * @swagger
- * /getAll:
- *   get:
- *     summary: Get all integrated data of companies, positions and eligibility
- *     description: Returns all integrated data of companies, positions and eligibility
- *     responses:
- *       200:
- *         description: A list of companies, positions and eligibility
- *       401:
- *          description: data not appropriate
- *       501 :
- *            description: Internet server problem
- *
- */
-
-companyRoute.get("/getAll", async (req, res) => {
+companyRoute.get("/getCompany", companyCacheData, async (req, res, next) => {
   try {
-    const companies = await companyData.find({}).populate({
-      path: "positionId",
-      populate: {
-        path: "eligibilityId",
-        model: "eligibility",
-      },
-    });
-    res.json(companies);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server Error" });
+    console.log("fetching data from database.......");
+    const companyDataResult = await companyData.find({});
+    if (companyDataResult.length == 0) {
+      return res.status(404).send({ messge: "no data found" });
+    }
+
+    client.setEx("companyData", 60, JSON.stringify(companyDataResult));
+    console.log("Set repo value in Redis");
+    return res.status(201).send({message : "company Data from database", companyDataResult});
+  } catch (error) {
+    console.log(error);
+    next(error);
+  } finally {
+    client.quit();
   }
 });
 
@@ -136,6 +120,8 @@ companyRoute.get("/getAll", async (req, res) => {
  *            description: Internet server problem
  *
  */
+
+
 
 companyRoute.get("/singleCompany", async (req, res) => {
   const { companyName } = req.query;
@@ -185,12 +171,17 @@ companyRoute.get("/singleCompany", async (req, res) => {
  *            description: Internet server problem
  *
  */
-companyRoute.get("/getParticularCompany/:id", async (req, res) => {
+companyRoute.get("/getParticularCompany/:id",particularCompanyCache, async (req, res) => {
   const { id } = req.params;
 
   const getParticularCompany = await companyData.findById({ _id: id });
-
-  return res.send(getParticularCompany);
+  if(getParticularCompany.length == 0){
+    return res.status(401).send({message : "check id or data not found"})
+  }
+  client.setEx("singleCompany", 60, JSON.stringify(getParticularCompany))
+  
+  console.log("Set repo value in Redis");
+  return res.status(201).send({message : "company Data from database", getParticularCompany});
 });
 
 // CreateNewCompany details //
@@ -206,7 +197,7 @@ companyRoute.get("/getParticularCompany/:id", async (req, res) => {
  *
  *             application/json:
  *                  schema:
- *                      $ref : "#/components/schema/newCompany"
+ *                      $ref : "#/components/schemas/newCompany"
  *
  *     responses:
  *       200:
@@ -281,7 +272,7 @@ companyRoute.post("/createCompany", async (req, res) => {
  *            content :
  *               application/json:
  *                      schema:
- *                          $ref : "#/components/schema/newCompany"
+ *                          $ref : "#/components/schemas/newCompany"
  *     responses:
  *       200:
  *         description: Delete company details successfully
