@@ -1,9 +1,11 @@
 const redis = require("redis") ;
+require('dotenv').config();
 
 
+// const REDIS_PORT ="redis://127.0.0.1:6379" ;
+const redisPort = process.env.REDIS_PORT ;
 
-const REDIS_PORT ="redis://127.0.0.1:6379" ;
-const client = redis.createClient({ url: REDIS_PORT, legacyMode: true }) ;
+const client = redis.createClient({ url: redisPort, legacyMode: true }) ;
 
 // IIFE  for redis connection //
 
