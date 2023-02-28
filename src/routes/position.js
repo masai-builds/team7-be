@@ -3,7 +3,7 @@ const positionRoute = express.Router();
 const posModel = require("../models/positionModel");
 const studentAuth = require("../middleware/studentAuth");
 const companyData = require("../models/newCompanyModel");
-
+const {client, postionCacheData, particularPositionCache}  = require("../../redis") ;
 /**
  * @swagger
  * components:
@@ -54,10 +54,25 @@ const companyData = require("../models/newCompanyModel");
  *            description: Internet server problem
  *
  */
-positionRoute.get("/position", async (req, res) => {
-  const Data = await posModel.find();
-
-  res.status(200).send({ message: "list of positions", Data });
+positionRoute.get("/position",postionCacheData, async (req, res) => {
+  try {
+    const positionData = await posModel.find();
+    if(positionData.length <= 0){
+      return res.status(401).send({message : "no data available"})
+    }
+  
+    client.setEx("postionData", 60, JSON.stringify(positionData))
+    console.log("position data set in redis") ;
+    return res.status(201).send({message : "position Data from database", positionData });
+    
+  } catch (error) {
+    console.log(error)
+    next(error)
+  } finally{
+    client.quit() ;
+  }
+ 
+  
 });
 /**
  * @swagger
@@ -84,12 +99,25 @@ positionRoute.get("/position", async (req, res) => {
  *            description: Internet server problem
  *
  */
-positionRoute.get("/position/:id", async (req, res) => {
-  let { id } = req.params;
-  const Data = await posModel.findOne({ _id: id }).populate({
+positionRoute.get("/position/:id",particularPositionCache, async (req, res) => {
+  try {
+    let { id } = req.params;
+  const particularPositionData = await posModel.findOne({ _id: id }).populate({
     path: "eligibilityId",
   });
-  res.status(200).send({ message: " data of this position", Data });
+  if(particularPositionData <= 0){
+     return res.status(401).send({message : "data not available or check id"})
+  }
+  client.setEx("particularPosition", 60, JSON.stringify(particularPositionData))
+  console.log("position data set in redis") ;
+  res.status(200).send({ message: " data of this position", particularPositionData });
+    
+  } catch (error) {
+    console.log(error) ;
+    next(error)
+  } finally{
+     client.quit()
+  }
 });
 /**
  * @swagger

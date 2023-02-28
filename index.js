@@ -9,8 +9,7 @@ const companyRoute = require("./src/routes/newCompany");
 const eligibilityRoute = require("./src/routes/eligibility");
 const cookieParser = require("cookie-parser");
 const dotenv = require("dotenv");
-const swaggerUi = require("swagger-ui-express");
-const swaggerSpec = require("./swagger");
+const {swaggerUi, swaggerSpec} = require("./swagger");
 const busboyBodyParser = require("busboy-body-parser");
 dotenv.config({ path: "./src/config/.env" });
 
