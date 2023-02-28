@@ -1,8 +1,6 @@
 const mongoose = require ("mongoose")
 
-
 const positionSchema = mongoose.Schema({
-   
     companyName : { type: String, required: true },
     title: { type: String, required: true },
     category: { type: String, required: true },

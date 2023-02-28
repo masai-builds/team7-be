@@ -27,6 +27,8 @@
     "redis": "^4.6.5",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^4.6.0",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "winston": "^3.8.2",
+    "winston-mongodb": "^5.1.1"
   }
 }
