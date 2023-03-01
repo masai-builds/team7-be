@@ -9,8 +9,8 @@ const jwt = require("jsonwebtoken");
 const handlebars = require("handlebars");
 const fs = require("fs");
 const path = require("path");
-const logger = require("./logger")
-const {v4:uuidv4} = require("uuid") ;
+const logger = require("./logger");
+const { v4: uuidv4 } = require("uuid");
 
 /**
  * @swagger
@@ -77,17 +77,22 @@ authRoute.post("/signup", async (req, res) => {
     }
 
     if (password !== rePassword) {
-      return res.status(400).send({ message: "Please make sure your passwords match." });
+      return res
+        .status(400)
+        .send({ message: "Please make sure your passwords match." });
     }
 
     if (!passwordRegex.test(password)) {
       return res.status(400).send({
-        message: "Password must contain at least 8 characters, including at least 1 number, 1 lowercase letter, and 1 uppercase letter.",
+        message:
+          "Password must contain at least 8 characters, including at least 1 number, 1 lowercase letter, and 1 uppercase letter.",
       });
     }
 
     if (!emailReg.test(email)) {
-      return res.status(400).send({ message: "Please provide a valid email address." });
+      return res
+        .status(400)
+        .send({ message: "Please provide a valid email address." });
     }
 
     const salt = await bcrypt.genSaltSync(10);
@@ -98,7 +103,7 @@ authRoute.post("/signup", async (req, res) => {
       ...req.body,
       password: Pass,
       rePassword: rePass,
-      uuid
+      uuid,
     });
 
     user.save(async (err, success) => {
@@ -109,7 +114,7 @@ authRoute.post("/signup", async (req, res) => {
       const directory = path.join(__dirname, "..", "utils", "signupEmail.html");
       const fileRead = fs.readFileSync(directory, "utf-8");
       const template = handlebars.compile(fileRead);
-      const htmlToSend = template({ name: req.body.name, userId :  uuid });
+      const htmlToSend = template({ name: req.body.name, userId: uuid });
 
       const transporter = nodemailer.createTransport({
         service: "gmail",
@@ -127,16 +132,19 @@ authRoute.post("/signup", async (req, res) => {
 
       try {
         await transporter.sendMail(mailOptions);
-        logger.info('User signed up successfully', { userId: success._id,email: success.email,
-          name: success.name, });
+        logger.info("User signed up successfully", {
+          userId: success._id,
+          email: success.email,
+          name: success.name,
+        });
         return res.status(201).send({ message: "successfully registered" });
       } catch (err) {
-        logger.error('Error sending confirmation email', { error: err });
+        logger.error("Error sending confirmation email", { error: err });
         return res.status(500).send({ message: "Error sending email" });
       }
     });
   } catch (error) {
-    logger.error('Error occurred during signup', { error: error });
+    logger.error("Error occurred during signup", { error: error });
     return res.status(500).send({ message: "Error occurred" });
   }
 });
@@ -214,12 +222,14 @@ authRoute.post("/login", async (req, res) => {
     }
 
     if (!validUser) {
-      logger.error('User failed to login', { email: email });
+      logger.error("User failed to login", { email: email });
       return res.status(401).send({ message: "Invalid Credentials" });
     }
 
     if (!validUser.emailConfirmed) {
-      return res.status(401).send({ message: "Please confirm your email before logging in" });
+      return res
+        .status(401)
+        .send({ message: "Please confirm your email before logging in" });
     }
 
     const isMatch = await bcrypt.compare(password, validUser.password);
@@ -229,24 +239,26 @@ authRoute.post("/login", async (req, res) => {
     }
 
     // authorize based on user role
-    const token = jwt.sign({
-      name: validUser.name,
-      role: validUser.role
-    }, process.env.JWT_KEY);
+    const token = jwt.sign(
+      {
+        name: validUser.name,
+        role: validUser.role,
+      },
+      process.env.JWT_KEY
+    );
 
     // cookiegenerate
     res.cookie("usercookieAuth", token, {
       expires: new Date(Date.now() + 9000000),
       httpOnly: true,
     });
-    logger.info('User logged in successfully', { userId: validUser._id });
-    res.status(201).send({ message: "Login successful" ,token});
+    logger.info("User logged in successfully", { userId: validUser._id });
+    res.status(201).send({ message: "Login successful", token });
   } catch (error) {
-    logger.error('Error occurred during login', { error: error });
+    logger.error("Error occurred during login", { error: error });
     res.status(500).send({ message: "Something went wrong" });
   }
 });
-
 
 // forgetPassword //
 /**
@@ -383,14 +395,13 @@ authRoute.patch("/resetPassword/:id", async (req, res) => {
   }
 });
 
-
 //change password
 authRoute.patch("/changePassword/:id", async (req, res) => {
   const { id } = req.params;
   const { password, rePassword } = req.body;
 
   const oldUser = await userModel.findOne({ _id: id });
-  console.log(oldUser)
+  console.log(oldUser);
 
   if (password !== rePassword) {
     return res.status(401).send({ meassge: "Password not same " });

@@ -3,7 +3,12 @@ const positionRoute = express.Router();
 const posModel = require("../models/positionModel");
 const studentAuth = require("../middleware/studentAuth");
 const companyData = require("../models/newCompanyModel");
-const {client, postionCacheData, particularPositionCache}  = require("../../redis") ;
+const logger = require("./logger");
+const {
+  client,
+  postionCacheData,
+  particularPositionCache,
+} = require("../../redis");
 /**
  * @swagger
  * components:
@@ -54,25 +59,24 @@ const {client, postionCacheData, particularPositionCache}  = require("../../redi
  *            description: Internet server problem
  *
  */
-positionRoute.get("/position",postionCacheData, async (req, res) => {
+positionRoute.get("/position", postionCacheData, async (req, res) => {
   try {
     const positionData = await posModel.find();
-    if(positionData.length <= 0){
-      return res.status(401).send({message : "no data available"})
+    if (positionData.length <= 0) {
+      return res.status(401).send({ message: "no data available" });
     }
-  
-    client.setEx("postionData", 60, JSON.stringify(positionData))
-    console.log("position data set in redis") ;
-    return res.status(201).send({message : "position Data from database", positionData });
-    
-  } catch (error) {
-    console.log(error)
-    next(error)
-  } finally{
-    client.quit() ;
+
+    client.setEx("postionData", 60, JSON.stringify(positionData));
+    logger.info("position data set to redis");
+    return res
+      .status(201)
+      .send({ message: "position Data from database", positionData });
+  } catch (err) {
+    logger.error("position get error", { error: err });
+    next(err);
+  } finally {
+    client.quit();
   }
- 
-  
 });
 /**
  * @swagger
@@ -99,26 +103,39 @@ positionRoute.get("/position",postionCacheData, async (req, res) => {
  *            description: Internet server problem
  *
  */
-positionRoute.get("/position/:id",particularPositionCache, async (req, res) => {
-  try {
-    let { id } = req.params;
-  const particularPositionData = await posModel.findOne({ _id: id }).populate({
-    path: "eligibilityId",
-  });
-  if(particularPositionData <= 0){
-     return res.status(401).send({message : "data not available or check id"})
+positionRoute.get(
+  "/position/:id",
+  particularPositionCache,
+  async (req, res) => {
+    try {
+      let { id } = req.params;
+      const particularPositionData = await posModel
+        .findOne({ _id: id })
+        .populate({
+          path: "eligibilityId",
+        });
+      if (particularPositionData <= 0) {
+        return res
+          .status(401)
+          .send({ message: "data not available or check id" });
+      }
+      client.setEx(
+        "particularPosition",
+        60,
+        JSON.stringify(particularPositionData)
+      );
+      logger.info("position data set to redis");
+      res
+        .status(200)
+        .send({ message: " data of this position", particularPositionData });
+    } catch (err) {
+      logger.error("position get error", { error: err });
+      next(err);
+    } finally {
+      client.quit();
+    }
   }
-  client.setEx("particularPosition", 60, JSON.stringify(particularPositionData))
-  console.log("position data set in redis") ;
-  res.status(200).send({ message: " data of this position", particularPositionData });
-    
-  } catch (error) {
-    console.log(error) ;
-    next(error)
-  } finally{
-     client.quit()
-  }
-});
+);
 /**
  * @swagger
  * /positions/{id}:
@@ -181,18 +198,21 @@ positionRoute.post("/positions/:id", async (req, res) => {
       !bond ||
       !additionalCriteria
     ) {
-      res.status(401).send({ message: "fill all the details" });
+      logger.info("fill all the details");
+      return res.status(401).send({ message: "fill all the details" });
     }
     if (
       typeof openings !== "number" ||
       !Array.isArray(locations) ||
       locations.some((location) => typeof location !== "string")
     ) {
-      res.status(400).send({ message: "Invalid input data types" });
+      logger.info("Invalid input data types");
+      return res.status(400).send({ message: "Invalid input data types" });
     }
     const company = await companyData.findOne({ _id: id });
 
     if (!company) {
+      logger.info("Company not found");
       return res.status(404).json({ message: "Company not found" });
     }
 
@@ -206,8 +226,8 @@ positionRoute.post("/positions/:id", async (req, res) => {
     // const savedCompany = await company.save();
     return res.status(201).send({ message: "Position save successfully" });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server Error" });
+    logger.error("position post with id  error", { error: err });
+    return res.status(500).json({ message: "Server Error" });
   }
 });
 
@@ -248,9 +268,10 @@ positionRoute.patch("/updatePosition/:id", async (req, res) => {
     const Data = await posModel.findByIdAndUpdate(id, updateData, {
       new: true,
     });
-    res.status(200).send({ message: "position updated successfully" });
-  } catch (error) {
-    console.log(e);
+    logger.info("position updated successfully");
+    return res.status(200).send({ message: "position updated successfully" });
+  } catch (err) {
+    logger.error("position patch with id  error", { error: err });
     res.status(401).send({ message: "position updated unsuccessfully" });
   }
 });
@@ -281,7 +302,8 @@ positionRoute.patch("/updatePosition/:id", async (req, res) => {
 positionRoute.delete("/deletePosition/:id", async (req, res) => {
   let { id } = req.params;
   const Data = await posModel.findByIdAndDelete({ _id: id });
-  res.status(200).send({ message: "position deleted successfully", Data });
+  logger.info("position deleted successfully");
+ return res.status(200).send({ message: "position deleted successfully", Data });
 });
 
 module.exports = positionRoute;

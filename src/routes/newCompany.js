@@ -5,8 +5,12 @@ const companyRoute = Router();
 const companyData = require("../models/newCompanyModel");
 const authAdmin = require("../middleware/adminAuth");
 const studentAuth = require("../middleware/studentAuth");
-
-const {client, companyCacheData, particularCompanyCache } = require("../../redis");
+const logger = require("./logger");
+const {
+  client,
+  companyCacheData,
+  particularCompanyCache,
+} = require("../../redis");
 
 // check valid url function //
 
@@ -90,11 +94,15 @@ companyRoute.get("/getCompany", companyCacheData, async (req, res, next) => {
     }
 
     client.setEx("companyData", 60, JSON.stringify(companyDataResult));
-    console.log("Set repo value in Redis");
-    return res.status(201).send({message : "company Data from database", companyDataResult});
-  } catch (error) {
-    console.log(error);
-    next(error);
+   
+    logger.log("info","Set repo getCompany value in Redis")
+    return res
+      .status(201)
+      .send({ message: "company Data from database", companyDataResult });
+  } catch (err) {
+   
+    logger.error("error comes while getcompany", {error : err})
+    next(err);
   } finally {
     client.quit();
   }
@@ -121,8 +129,6 @@ companyRoute.get("/getCompany", companyCacheData, async (req, res, next) => {
  *
  */
 
-
-
 companyRoute.get("/singleCompany", async (req, res) => {
   const { companyName } = req.query;
 
@@ -134,6 +140,7 @@ companyRoute.get("/singleCompany", async (req, res) => {
 
   await companyData.find(queryObj).exec((err, items) => {
     if (err) {
+      logger.error("error comes while serach company", {error : err})
       return res.status(500).send({ meassge: "searching error", err });
     }
     if (items.length <= 0) {
@@ -171,18 +178,34 @@ companyRoute.get("/singleCompany", async (req, res) => {
  *            description: Internet server problem
  *
  */
-companyRoute.get("/getParticularCompany/:id",particularCompanyCache, async (req, res) => {
-  const { id } = req.params;
+companyRoute.get(
+  "/getParticularCompany/:id",
+  particularCompanyCache,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
 
-  const getParticularCompany = await companyData.findById({ _id: id });
-  if(getParticularCompany.length == 0){
-    return res.status(401).send({message : "check id or data not found"})
+      const getParticularCompany = await companyData.findById({ _id: id });
+      if (getParticularCompany.length == 0) {
+        return res.status(401).send({ message: "check id or data not found" });
+      }
+      client.setEx("singleCompany", 60, JSON.stringify(getParticularCompany));
+      logger.log("info","Set repo getParticularCompany value in Redis")
+      
+      return res
+        .status(201)
+        .send({ message: "company Data from database", getParticularCompany });
+      
+    } catch (err) {
+   
+      logger.error("error comes while get particular company", {error : err})
+      next(err);
+    } finally {
+      client.quit();
+    }
+   
   }
-  client.setEx("singleCompany", 60, JSON.stringify(getParticularCompany))
-  
-  console.log("Set repo value in Redis");
-  return res.status(201).send({message : "company Data from database", getParticularCompany});
-});
+);
 
 // CreateNewCompany details //
 /**
@@ -234,6 +257,7 @@ companyRoute.post("/createCompany", async (req, res) => {
     return res.status(404).send({ message: "Please fill required data" });
   }
   if (!validUrl(websiteUrl)) {
+    logger.info("please enter valid company url");
     return res.status(401).send({ meassge: "please enter valid company url" });
   }
 
@@ -242,6 +266,7 @@ companyRoute.post("/createCompany", async (req, res) => {
   new companyData({ ...req.body, companyName: toTitleCase }).save(
     (err, success) => {
       if (err) {
+        logger.error("post company data error", { error: err });
         return res.status(401).send({ message: "data not save in database" });
       }
       return res
@@ -283,7 +308,6 @@ companyRoute.post("/createCompany", async (req, res) => {
  *
  */
 companyRoute.patch("/editCompany/:id", async (req, res) => {
- 
   const { id } = req.params;
   const { companyName, websiteUrl } = req.body;
 
@@ -293,6 +317,7 @@ companyRoute.patch("/editCompany/:id", async (req, res) => {
   }
   if (websiteUrl) {
     if (!validUrl(websiteUrl)) {
+      logger.info("please enter valid company url");
       return res
         .status(401)
         .send({ meassge: "please enter valid company url" });
@@ -305,7 +330,8 @@ companyRoute.patch("/editCompany/:id", async (req, res) => {
       res.status(201).send({ message: "Details successfully edit" });
     })
     .catch((e) => {
-      res
+      logger.error("editing company data error", { error: e });
+      return res
         .status(404)
         .send({ message: "unsuccessful data edition check details" });
     });
@@ -344,6 +370,7 @@ companyRoute.delete("/deleteCompany/:id", async (req, res) => {
       return res.status(201).send({ message: "data delete successful" });
     })
     .catch((e) => {
+      logger.error("delete company data error", { error: e });
       return res.status(404).send({
         message: "delete unsuccessful or might be data already delete",
       });
