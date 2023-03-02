@@ -20,6 +20,7 @@ const positionSchema = mongoose.Schema({
   bond: { type: String, required: false },
   additionalCriteria: { type: String, required: false },
   companyId: { type: String, required: true },
+  timeStamp : {type : Date, default : Date.now},
   eligibilityId: [{ type: mongoose.Schema.Types.ObjectId, ref: "eligibility" }],
 });
 
