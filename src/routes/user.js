@@ -243,17 +243,22 @@ authRoute.post("/login", async (req, res) => {
       {
         name: validUser.name,
         role: validUser.role,
+        id : validUser._id
       },
       process.env.JWT_KEY
     );
-
+    
     // cookiegenerate
     res.cookie("usercookieAuth", token, {
       expires: new Date(Date.now() + 9000000),
       httpOnly: true,
     });
     logger.info("User logged in successfully", { userId: validUser._id });
-    res.status(201).send({ message: "Login successful", token });
+    res.status(201).send({ message: "Login successful", token , userDetails: {
+      name: validUser.name,
+      role: validUser.role,
+      id : validUser._id
+    } });
   } catch (error) {
     logger.error("Error occurred during login", { error: error });
     res.status(500).send({ message: "Something went wrong" });
