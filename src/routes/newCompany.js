@@ -94,14 +94,13 @@ companyRoute.get("/getCompany", companyCacheData, async (req, res, next) => {
     }
 
     client.setEx("companyData", 60, JSON.stringify(companyDataResult));
-   
-    logger.log("info","Set repo getCompany value in Redis")
+
+    logger.log("info", "Set repo getCompany value in Redis");
     return res
       .status(201)
       .send({ message: "company Data from database", companyDataResult });
   } catch (err) {
-   
-    logger.error("error comes while getcompany", {error : err})
+    logger.error("error comes while getcompany", { error: err });
     next(err);
   } finally {
     client.quit();
@@ -140,7 +139,7 @@ companyRoute.get("/singleCompany", async (req, res) => {
 
   await companyData.find(queryObj).exec((err, items) => {
     if (err) {
-      logger.error("error comes while serach company", {error : err})
+      logger.error("error comes while serach company", { error: err });
       return res.status(500).send({ meassge: "searching error", err });
     }
     if (items.length <= 0) {
@@ -190,20 +189,17 @@ companyRoute.get(
         return res.status(401).send({ message: "check id or data not found" });
       }
       client.setEx("singleCompany", 60, JSON.stringify(getParticularCompany));
-      logger.log("info","Set repo getParticularCompany value in Redis")
-      
+      logger.log("info", "Set repo getParticularCompany value in Redis");
+
       return res
         .status(201)
         .send({ message: "company Data from database", getParticularCompany });
-      
     } catch (err) {
-   
-      logger.error("error comes while get particular company", {error : err})
+      logger.error("error comes while get particular company", { error: err });
       next(err);
     } finally {
       client.quit();
     }
-   
   }
 );
 
@@ -231,7 +227,7 @@ companyRoute.get(
  *            description: Internet server problem
  *
  */
-companyRoute.post("/createCompany", async (req, res) => {
+companyRoute.post("/createCompany", authAdmin, async (req, res) => {
   const {
     companyName,
     websiteUrl,
