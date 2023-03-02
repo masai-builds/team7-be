@@ -4,11 +4,7 @@ const positionSchema = mongoose.Schema({
   companyName: { type: String, required: true },
   title: { type: String, required: true },
   category: { type: String, required: true },
-  applicationProcess: {
-    type: String,
-    enum: ["online", "offline"],
-    required: true,
-  },
+  applicationProcess: {type: String,enum: ["online", "offline"],required: true},
   openings: { type: Number, required: true },
   openingsPOC: { type: Number, required: true },
   minSalary: { type: Number, required: true, min: 0 },
@@ -20,7 +16,7 @@ const positionSchema = mongoose.Schema({
   bond: { type: String, required: false },
   additionalCriteria: { type: String, required: false },
   companyId: { type: String, required: true },
-  eligibilityId: [{ type: mongoose.Schema.Types.ObjectId, ref: "eligibility" }],
+  timestamp: { type: Date, default: Date.now }
 });
 
 const positionModel = mongoose.model("position", positionSchema);

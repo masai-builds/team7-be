@@ -19,9 +19,7 @@ function companyCacheData(req, res, next) {
     if (err) throw err;
 
     if (data !== null) {
-      return res
-        .status(201)
-        .send({ message: " company data from redis", data: JSON.parse(data) });
+      return res .status(201) .send({ message: " company data from redis", data: JSON.parse(data) });
     } else {
       next();
     }

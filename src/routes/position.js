@@ -65,7 +65,6 @@ positionRoute.get("/position", postionCacheData, async (req, res) => {
     if (positionData.length <= 0) {
       return res.status(401).send({ message: "no data available" });
     }
-
     client.setEx("postionData", 60, JSON.stringify(positionData));
     logger.info("position data set to redis");
     return res
@@ -103,31 +102,16 @@ positionRoute.get("/position", postionCacheData, async (req, res) => {
  *            description: Internet server problem
  *
  */
-positionRoute.get(
-  "/position/:id",
-  particularPositionCache,
-  async (req, res) => {
+positionRoute.get("/position/:id",particularPositionCache, async (req, res) => {
     try {
       let { id } = req.params;
-      const particularPositionData = await posModel
-        .findOne({ _id: id })
-        .populate({
-          path: "eligibilityId",
-        });
+      const particularPositionData = await posModel.findOne({ _id: id }).populate({path: "eligibilityId"});
       if (particularPositionData <= 0) {
-        return res
-          .status(401)
-          .send({ message: "data not available or check id" });
+        return res.status(401).send({ message: "data not available or check id" });
       }
-      client.setEx(
-        "particularPosition",
-        60,
-        JSON.stringify(particularPositionData)
-      );
+      client.setEx("particularPosition",60,JSON.stringify(particularPositionData));
       logger.info("position data set to redis");
-      res
-        .status(200)
-        .send({ message: " data of this position", particularPositionData });
+      res.status(200).send({ message: " data of this position", particularPositionData });
     } catch (err) {
       logger.error("position get error", { error: err });
       next(err);
@@ -169,41 +153,15 @@ positionRoute.get(
 positionRoute.post("/positions/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      title,
-      category,
-      applicationProcess,
-      openings,
-      minSalary,
-      maxSalary,
-      locations,
-      rounds,
-      workingMode,
-      relocation,
-      bond,
-      additionalCriteria,
-    } = req.body;
-    if (
-      !title ||
-      !category ||
-      !applicationProcess ||
-      !openings ||
-      !minSalary ||
-      !maxSalary ||
-      !locations ||
-      !rounds ||
-      !workingMode ||
-      !maxSalary ||
-      !relocation ||
-      !bond ||
-      !additionalCriteria
-    ) {
+    const {title,category,applicationProcess,openings,minSalary,maxSalary,
+    locations,rounds,workingMode,relocation,bond,additionalCriteria,} = req.body;
+    if ( !title || !category || !applicationProcess || !openings || !minSalary || !maxSalary || !locations ||
+      !rounds || !workingMode || !maxSalary || !relocation || !bond || !additionalCriteria) {
+
       logger.info("fill all the details");
       return res.status(401).send({ message: "fill all the details" });
     }
-    if (
-      typeof openings !== "number" ||
-      !Array.isArray(locations) ||
+    if ( typeof openings !== "number" || !Array.isArray(locations) ||
       locations.some((location) => typeof location !== "string")
     ) {
       logger.info("Invalid input data types");
@@ -222,9 +180,7 @@ positionRoute.post("/positions/:id", async (req, res) => {
       companyId: id,
     });
     const savedPosition = await position.save();
-
-    // const savedCompany = await company.save();
-    return res.status(201).send({ message: "Position save successfully" });
+    return res.status(201).send({ message: "Position save successfully",savedPosition });
   } catch (err) {
     logger.error("position post with id  error", { error: err });
     return res.status(500).json({ message: "Server Error" });
