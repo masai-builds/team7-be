@@ -215,7 +215,7 @@ positionRoute.post("/positions/:id", async (req, res) => {
       !twelfthPer ||
       !gender
     ) {
-      res.status(401).send({ message: "fill all the details" });
+     return res.status(401).send({ message: "fill all the details" });
     }
     if ( typeof openings !== "number" || !Array.isArray(locations) ||
       locations.some((location) => typeof location !== "string")
@@ -289,7 +289,7 @@ positionRoute.patch("/updatePosition/:id", async (req, res) => {
     return res.status(200).send({ message: "position updated successfully" });
   } catch (err) {
     logger.error("position patch with id  error", { error: err });
-    res.status(401).send({ message: "position updated unsuccessfully" });
+   return res.status(401).send({ message: "position updated unsuccessfully" });
   }
 });
 

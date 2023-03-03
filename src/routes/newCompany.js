@@ -63,9 +63,7 @@ function properName(companyName) {
  *                              type :  string
  *                      leadSource :
  *                             type :  string
- *                      companyLogo :
- *                              type : string
- *                              format: binary
+ *                     
  *
  */
 
