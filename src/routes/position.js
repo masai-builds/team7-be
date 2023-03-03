@@ -1,8 +1,14 @@
 const express = require("express");
 const positionRoute = express.Router();
-const posModel = require("../models/positionModel");
+const positionEligibilityModel = require("../models/positionModel");
 const studentAuth = require("../middleware/studentAuth");
 const companyData = require("../models/newCompanyModel");
+const logger = require("./logger");
+const {
+  client,
+  postionCacheData,
+  particularPositionCache,
+} = require("../../redis");
 
 /**
  * @swagger
@@ -32,11 +38,29 @@ const companyData = require("../models/newCompanyModel");
  *                      workingMode:
  *                             type :  string
  *                      relocation:
- *                             type :  [string]
+ *                             type :  string
  *                      bond :
  *                             type : string
  *                      additionalCriteria :
  *                             type : string
+ *                      degrees : 
+ *                             type :  [string]
+ *                      streams : 
+ *                             type :  [string]
+ *                      graduationsYear :
+ *                             type :  number
+ *                      locationDomiciles : 
+ *                             type :  [string]
+ *                      tenthPer : 
+ *                             type :  number 
+ *                      gender : 
+ *                             type :  string 
+ *                             enum : 
+ *                              - Male
+ *                              - Female 
+ *                              - Other
+ * 
+ *                      
  */
 
 /**
@@ -54,10 +78,22 @@ const companyData = require("../models/newCompanyModel");
  *            description: Internet server problem
  *
  */
-positionRoute.get("/position", async (req, res) => {
-  const Data = await posModel.find();
-
-  res.status(200).send({ message: "list of positions", Data });
+positionRoute.get("/position", postionCacheData,async (req, res) => {
+  try {
+    const positionEligibilityData = await positionEligibilityModel.find({});
+    if (positionEligibilityData.length <= 0) {
+     return res.status(404).send({ message: "data not available" });
+    }
+    client.setEx("postionData", 60, JSON.stringify(positionEligibilityData));
+    logger.info("position data set to redis");
+   return res
+      .status(200)
+      .send({ message: "list of positions with eligibility", positionEligibilityData });
+  } catch (error) {
+    logger.error("position get error", { error: err });
+    next(err);
+    return res.status(401).send({ message: "data not getting" });
+  }
 });
 /**
  * @swagger
@@ -84,12 +120,26 @@ positionRoute.get("/position", async (req, res) => {
  *            description: Internet server problem
  *
  */
-positionRoute.get("/position/:id", async (req, res) => {
-  let { id } = req.params;
-  const Data = await posModel.findOne({ _id: id }).populate({
-    path: "eligibilityId",
-  });
-  res.status(200).send({ message: " data of this position", Data });
+positionRoute.get("/position/:id",particularPositionCache, async (req, res) => {
+  try {
+    let { id } = req.params;
+    const ParticularPositionEligible = await positionEligibilityModel.findOne({_id : id})
+    if(ParticularPositionEligible.length <= 0){
+        return res.status(401).send({ message: " data not available or check id " });
+    }
+    client.setEx(
+      "particularPosition",
+      60,
+      JSON.stringify(ParticularPositionEligible)
+    );
+    logger.info("position data set to redis");
+    return res.status(200).send({ message: " data of this position and eligibility", ParticularPositionEligible });
+    
+   } catch (error) {
+    logger.error("position get error", { error: err });
+      next(err);
+    return res.status(401).send({ message: "data not getting" });
+   }
 });
 /**
  * @swagger
@@ -137,6 +187,13 @@ positionRoute.post("/positions/:id", async (req, res) => {
       relocation,
       bond,
       additionalCriteria,
+      degrees,
+      streams,
+      graduationsYear,
+      locationDomiciles,
+      tenthPer,
+      twelfthPer,
+      gender,
     } = req.body;
     if (
       !title ||
@@ -148,10 +205,16 @@ positionRoute.post("/positions/:id", async (req, res) => {
       !locations ||
       !rounds ||
       !workingMode ||
-      !maxSalary ||
       !relocation ||
       !bond ||
-      !additionalCriteria
+      !additionalCriteria ||
+      !degrees ||
+      !streams ||
+      !graduationsYear ||
+      !locationDomiciles ||
+      !tenthPer ||
+      !twelfthPer ||
+      !gender
     ) {
       res.status(401).send({ message: "fill all the details" });
     }
@@ -160,15 +223,16 @@ positionRoute.post("/positions/:id", async (req, res) => {
       !Array.isArray(locations) ||
       locations.some((location) => typeof location !== "string")
     ) {
-      res.status(400).send({ message: "Invalid input data types" });
+     return res.status(400).send({ message: "Invalid input data types" });
     }
     const company = await companyData.findOne({ _id: id });
 
     if (!company) {
       return res.status(404).json({ message: "Company not found" });
     }
-
-    const position = new posModel({
+  
+   
+    const position = new positionEligibilityModel({
       ...req.body,
       companyName: company.companyName,
       companyId: id,
@@ -176,10 +240,12 @@ positionRoute.post("/positions/:id", async (req, res) => {
     const savedPosition = await position.save();
 
     // const savedCompany = await company.save();
-    return res.status(201).send({ message: "Position save successfully" });
+    return res
+      .status(201)
+      .send({ message: "Position save successfully", id: position._id });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Server Error" });
+    res.status(401).json({ message: "data not post" });
   }
 });
 
@@ -217,13 +283,13 @@ positionRoute.patch("/updatePosition/:id", async (req, res) => {
   try {
     let { id } = req.params;
     const updateData = req.body;
-    const Data = await posModel.findByIdAndUpdate(id, updateData, {
+    const Data = await positionEligibilityModel.findByIdAndUpdate(id, updateData, {
       new: true,
     });
-    res.status(200).send({ message: "position updated successfully" });
+   return res.status(200).send({ message: "position updated successfully" });
   } catch (error) {
-    console.log(e);
-    res.status(401).send({ message: "position updated unsuccessfully" });
+    console.log(error);
+   return res.status(401).send({ message: "position updated unsuccessfully" });
   }
 });
 
@@ -252,8 +318,9 @@ positionRoute.patch("/updatePosition/:id", async (req, res) => {
 
 positionRoute.delete("/deletePosition/:id", async (req, res) => {
   let { id } = req.params;
-  const Data = await posModel.findByIdAndDelete({ _id: id });
-  res.status(200).send({ message: "position deleted successfully", Data });
+  const Data = await positionEligibilityModel.findByIdAndDelete({ _id: id });
+
+  return res.status(200).send({ message: "position deleted successfully", Data });
 });
 
 module.exports = positionRoute;

@@ -5,6 +5,14 @@ const companyRoute = Router();
 const companyData = require("../models/newCompanyModel");
 const authAdmin = require("../middleware/adminAuth");
 const studentAuth = require("../middleware/studentAuth");
+
+
+const logger = require("./logger");
+const {
+  client,
+  companyCacheData,
+  particularCompanyCache,
+} = require("../../redis");
 // check valid url function //
 
 function validUrl(url) {
@@ -78,43 +86,32 @@ function properName(companyName) {
  *
  */
 
-companyRoute.get("/getCompany",async (req, res) => {
-
-  const getCompanyData = await companyData.find({});
-  return res.status(201).send({ message: "list of companies", getCompanyData });
-});
-
-/**
- * @swagger
- * /getAll:
- *   get:
- *     summary: Get all integrated data of companies, positions and eligibility
- *     description: Returns all integrated data of companies, positions and eligibility
- *     responses:
- *       200:
- *         description: A list of companies, positions and eligibility
- *       401:
- *          description: data not appropriate
- *       501 :
- *            description: Internet server problem
- *
- */
-
-companyRoute.get("/getAll", async (req, res) => {
+companyRoute.get("/getCompany",companyCacheData,async (req, res) => {
   try {
-    const companies = await companyData.find({}).populate({
-      path: "positionId",
-      populate: {
-        path: "eligibilityId",
-        model: "eligibility",
-      },
-    });
-    res.json(companies);
+    logger.info("fetching data from database.......");
+    const companyDataResult = await companyData.find({});
+    if (companyDataResult.length == 0) {
+      return res.status(404).send({ messge: "no data found" });
+    }
+
+    client.setEx("companyData", 60, JSON.stringify(companyDataResult));
+   
+    logger.log("info","Set repo getCompany value in Redis")
+    return res
+      .status(201)
+      .send({ message: "company Data from database", companyDataResult });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server Error" });
+   
+    logger.error("error comes while getcompany", {error : err})
+    next(err);
+  } finally {
+    client.quit();
   }
 });
+
+
+
+
 
 /**
  * @swagger
@@ -185,12 +182,26 @@ companyRoute.get("/singleCompany", async (req, res) => {
  *            description: Internet server problem
  *
  */
-companyRoute.get("/getParticularCompany/:id", async (req, res) => {
-  const { id } = req.params;
+companyRoute.get("/getParticularCompany/:id",particularCompanyCache, async (req, res) => {
+  try {
+    const { id } = req.params;
 
-  const getParticularCompany = await companyData.findById({ _id: id });
+    const getParticularCompany = await companyData.findById({ _id: id });
+    if (getParticularCompany.length == 0) {
+      return res.status(401).send({ message: "check id or data not found" });
+    }
+    client.setEx("singleCompany", 60, JSON.stringify(getParticularCompany));
+    logger.log("info", "Set repo getParticularCompany value in Redis");
 
-  return res.send(getParticularCompany);
+    return res
+      .status(201)
+      .send({ message: "company Data from database", getParticularCompany });
+  } catch (err) {
+    logger.error("error comes while get particular company", { error: err });
+    next(err);
+  } finally {
+    client.quit();
+  }
 });
 
 // CreateNewCompany details //

@@ -1,6 +1,14 @@
 const mongoose = require ("mongoose")
 
-const positionSchema = mongoose.Schema({
+const now = new Date() ;
+const options = {timeZone : "Asia/Kolkata"}  ;
+const dateTimeString = now.toLocaleString("en-IN", options) ;
+
+
+
+
+const positionEligibilitySchema = mongoose.Schema({
+   
     companyName : { type: String, required: true },
     title: { type: String, required: true },
     category: { type: String, required: true },
@@ -12,14 +20,21 @@ const positionSchema = mongoose.Schema({
     locations: { type: [String], required: true },
     rounds: { type: [String], required: true },
     workingMode: { type: String, required: true },
-    relocation: { type: [String], required: true },
+    relocation: { type: String, required: true },
     bond: { type: String, required: false },
     additionalCriteria: { type: String, required: false },
     companyId : { type: String, required: true },
-    eligibilityId:[{type : mongoose.Schema.Types.ObjectId,ref:"eligibility"}],
+    degrees:{type:[String], required:true},
+    streams: { type: [String], required: true },
+    graduationsYear: { type: Number, required: true },
+    locationDomiciles: { type: [String], required: true },
+    tenthPer: { type: Number, required: true },
+    twelfthPer: { type: Number, required: true },
+    gender:{type: String, enum: ["Male", "Female","Other"], required: true },
+    timeStap : {type : String, default : dateTimeString}
     
 })
 
-const positionModel = mongoose.model('position', positionSchema)
+const positionEligibilityModel = mongoose.model('positionEligibility', positionEligibilitySchema)
 
-module.exports= positionModel
+module.exports= positionEligibilityModel ;
