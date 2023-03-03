@@ -39,7 +39,7 @@ function properName(companyName) {
 /**
  * @swagger
  * components:
- *      schema :
+ *      schemas :
  *        newCompany :
  *                   type : object
  *                   properties :
@@ -65,7 +65,7 @@ function properName(companyName) {
  *                             type :  string
  *                      companyLogo :
  *                              type : string
- *                              format : binary
+ *                              format: binary
  *
  */
 
@@ -74,11 +74,11 @@ function properName(companyName) {
  * @swagger
  * /getCompany:
  *   get:
- *     summary: Get a list of all company
- *     description: Returns a list of all company
+ *     summary: Get a list of all companies
+ *     description: Returns a list of all companies
  *     responses:
  *       200:
- *         description: A list of company
+ *         description: A list of companies
  *       401:
  *          description: data not appropriate
  *       501 :
@@ -145,6 +145,7 @@ companyRoute.get("/singleCompany", async (req, res) => {
 
   await companyData.find(queryObj).exec((err, items) => {
     if (err) {
+      logger.error("error comes while serach company", { error: err });
       return res.status(500).send({ meassge: "searching error", err });
     }
     if (items.length <= 0) {
@@ -217,7 +218,7 @@ companyRoute.get("/getParticularCompany/:id",particularCompanyCache, async (req,
  *
  *             application/json:
  *                  schema:
- *                      $ref : "#/components/schema/newCompany"
+ *                      $ref : "#/components/schemas/newCompany"
  *
  *     responses:
  *       200:
@@ -228,7 +229,7 @@ companyRoute.get("/getParticularCompany/:id",particularCompanyCache, async (req,
  *            description: Internet server problem
  *
  */
-companyRoute.post("/createCompany", async (req, res) => {
+companyRoute.post("/createCompany", authAdmin, async (req, res) => {
   const {
     companyName,
     websiteUrl,
@@ -254,6 +255,7 @@ companyRoute.post("/createCompany", async (req, res) => {
     return res.status(404).send({ message: "Please fill required data" });
   }
   if (!validUrl(websiteUrl)) {
+    logger.info("please enter valid company url");
     return res.status(401).send({ meassge: "please enter valid company url" });
   }
 
@@ -262,6 +264,7 @@ companyRoute.post("/createCompany", async (req, res) => {
   new companyData({ ...req.body, companyName: toTitleCase }).save(
     (err, success) => {
       if (err) {
+        logger.error("post company data error", { error: err });
         return res.status(401).send({ message: "data not save in database" });
       }
       return res
@@ -292,7 +295,7 @@ companyRoute.post("/createCompany", async (req, res) => {
  *            content :
  *               application/json:
  *                      schema:
- *                          $ref : "#/components/schema/newCompany"
+ *                          $ref : "#/components/schemas/newCompany"
  *     responses:
  *       200:
  *         description: Delete company details successfully
@@ -303,7 +306,6 @@ companyRoute.post("/createCompany", async (req, res) => {
  *
  */
 companyRoute.patch("/editCompany/:id", async (req, res) => {
- 
   const { id } = req.params;
   const { companyName, websiteUrl } = req.body;
 
@@ -313,6 +315,7 @@ companyRoute.patch("/editCompany/:id", async (req, res) => {
   }
   if (websiteUrl) {
     if (!validUrl(websiteUrl)) {
+      logger.info("please enter valid company url");
       return res
         .status(401)
         .send({ meassge: "please enter valid company url" });
@@ -325,7 +328,8 @@ companyRoute.patch("/editCompany/:id", async (req, res) => {
       res.status(201).send({ message: "Details successfully edit" });
     })
     .catch((e) => {
-      res
+      logger.error("editing company data error", { error: e });
+      return res
         .status(404)
         .send({ message: "unsuccessful data edition check details" });
     });
@@ -364,6 +368,7 @@ companyRoute.delete("/deleteCompany/:id", async (req, res) => {
       return res.status(201).send({ message: "data delete successful" });
     })
     .catch((e) => {
+      logger.error("delete company data error", { error: e });
       return res.status(404).send({
         message: "delete unsuccessful or might be data already delete",
       });

@@ -9,7 +9,6 @@ const {
   postionCacheData,
   particularPositionCache,
 } = require("../../redis");
-
 /**
  * @swagger
  * components:
@@ -218,16 +217,16 @@ positionRoute.post("/positions/:id", async (req, res) => {
     ) {
       res.status(401).send({ message: "fill all the details" });
     }
-    if (
-      typeof openings !== "number" ||
-      !Array.isArray(locations) ||
+    if ( typeof openings !== "number" || !Array.isArray(locations) ||
       locations.some((location) => typeof location !== "string")
     ) {
-     return res.status(400).send({ message: "Invalid input data types" });
+      logger.info("Invalid input data types");
+      return res.status(400).send({ message: "Invalid input data types" });
     }
     const company = await companyData.findOne({ _id: id });
 
     if (!company) {
+      logger.info("Company not found");
       return res.status(404).json({ message: "Company not found" });
     }
   
@@ -286,10 +285,11 @@ positionRoute.patch("/updatePosition/:id", async (req, res) => {
     const Data = await positionEligibilityModel.findByIdAndUpdate(id, updateData, {
       new: true,
     });
-   return res.status(200).send({ message: "position updated successfully" });
-  } catch (error) {
-    console.log(error);
-   return res.status(401).send({ message: "position updated unsuccessfully" });
+    logger.info("position updated successfully");
+    return res.status(200).send({ message: "position updated successfully" });
+  } catch (err) {
+    logger.error("position patch with id  error", { error: err });
+    res.status(401).send({ message: "position updated unsuccessfully" });
   }
 });
 

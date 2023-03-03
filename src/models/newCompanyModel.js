@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const CompanySchema = mongoose.Schema({
   companyName: {
-     type: String,
+    type: String,
     required: true,
   },
   websiteUrl: {
@@ -42,10 +42,8 @@ const CompanySchema = mongoose.Schema({
     required: true,
   },
   companyLogo: {
-    type: String
-     
+    type: String,
   },
-  
 });
 
 const companyModel = mongoose.model("company", CompanySchema);
