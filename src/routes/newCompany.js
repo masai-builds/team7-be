@@ -360,17 +360,21 @@ companyRoute.patch("/editCompany/:id", async (req, res) => {
 companyRoute.delete("/deleteCompany/:id", async (req, res) => {
   const { id } = req.params;
 
-  await companyData
-    .findByIdAndDelete({ _id: id })
-    .then(() => {
-      return res.status(201).send({ message: "data delete successful" });
-    })
-    .catch((e) => {
-      logger.error("delete company data error", { error: e });
-      return res.status(404).send({
-        message: "delete unsuccessful or might be data already delete",
-      });
-    });
+ const deleteCompany = await companyData.findByIdAndDelete({ _id: id }) ;
+  res.status(201).send({ message: "data delete successful" });
+
+  // set new data to redis //
+  const companyDataResult = await companyData.find({});
+  if (companyDataResult.length == 0) {
+     res.status(404).send({ messge: "no data found" });
+  }
+  client.setEx("companyData", 60, JSON.stringify(companyDataResult));
+
+  // delte positions related to delete company //
+
+  const positionData = await positionEligibilityModel.deleteMany({companyId : id}) 
+  logger.info({message : "Delete company and related positions also"})
+
 });
 
 module.exports = companyRoute;

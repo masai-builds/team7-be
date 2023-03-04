@@ -320,7 +320,17 @@ positionRoute.delete("/deletePosition/:id", async (req, res) => {
   let { id } = req.params;
   const Data = await positionEligibilityModel.findByIdAndDelete({ _id: id });
 
-  return res.status(200).send({ message: "position deleted successfully", Data });
+  res.status(200).send({ message: "position deleted successfully", Data });
+
+  // redis set updated data //
+  
+  const positionEligibilityData = await positionEligibilityModel.find({});
+
+  if (positionEligibilityData.length <= 0) {
+    return res.status(404).send({ message: "data not available" });
+  }
+  client.setEx("postionData", 60, JSON.stringify(positionEligibilityData));
+  logger.info("position data set to redis");
 });
 
 module.exports = positionRoute;

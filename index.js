@@ -9,7 +9,7 @@ const companyRoute = require("./src/routes/newCompany");
 const eligibilityRoute = require("./src/routes/eligibility");
 const cookieParser = require("cookie-parser");
 const dotenv = require("dotenv");
-const { swaggerUi, swaggerSpec } = require("./swagger") ;
+const { swaggerUi, swaggerSpec } = require("./swagger");
 const busboyBodyParser = require("busboy-body-parser");
 const logger = require("./src/routes/logger");
 dotenv.config({ path: "./src/config/.env" });
@@ -36,3 +36,6 @@ app.listen(process.env.PORT, async () => {
   logger.log("info", `listening on port ${process.env.PORT}`);
   console.log(`server start at ${process.env.PORT} `);
 });
+
+
+module.exports = app ;

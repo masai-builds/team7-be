@@ -67,11 +67,13 @@ const { v4: uuidv4 } = require("uuid");
 authRoute.post("/signup", async (req, res) => {
   try {
     const userMail = await userModel.findOne({ email: req.body.email });
-    const { email, password, rePassword } = req.body;
+    const {name, email, password, rePassword } = req.body;
     const uuid = uuidv4();
     const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/;
-
+    if(!name){
+      return res.send({ message: "enter user name" });
+    }
     if (userMail) {
       return res.send({ message: "user already registered" });
     }
