@@ -3,14 +3,24 @@ require("dotenv").config();
 const logger = require("./src/routes/logger")
 // const REDIS_PORT ="redis://127.0.0.1:6379" ;
 const redisPort = process.env.REDIS_URL;
-const client = redis.createClient({ url: redisPort, legacyMode: true });
+const client = redis.createClient({ url: redisPort, legacyMode: true, connect_timeout: 30000, });
 
 // IIFE  for redis connection //
 (async () => {
   await client.connect();
 })();
 client.on("connect", () => console.log("Redis Client Connected"));
-// client.on("error", (err) => console.log("Redis Client Error", err));
+client.on("error", (err) => console.log("Redis Client Error", err));
+
+
+// (async () => {
+//   try {
+//     await client.connect();
+//     console.log("Redis Client Connected");
+//   } catch (err) {
+//     console.log("Redis Client Error", err);
+//   }
+// })();
 
 // get all company cache //
 function companyCacheData(req, res, next) {
