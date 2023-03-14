@@ -100,7 +100,7 @@ positionRoute.get("/position", postionCacheData, async (req, res) => {
 
     client.setEx("positionData", 60, JSON.stringify(positionEligibilityData));
     logger.info("Position data set to Redis");
-    
+
     return res.status(200).send({
       message: "List of positions with eligibility",
       positionEligibilityData,
@@ -138,7 +138,7 @@ positionRoute.get("/position", postionCacheData, async (req, res) => {
  */
 positionRoute.get(
   "/position/:id",
-  
+
   async (req, res) => {
     try {
       const token = req.headers["authorization"]?.split(" ")[1];
@@ -162,7 +162,7 @@ positionRoute.get(
           .status(401)
           .send({ message: " data not available or check id" });
       }
-    
+
       return res.status(200).send({
         message: " data of this position and eligibility",
         ParticularPositionEligible,
@@ -213,7 +213,7 @@ positionRoute.post("/positions/:id", async (req, res) => {
       logger.error("No token provided");
       return res.status(401).send({ message: "Unauthorized" });
     }
-    const { role , name} = jwt.verify(token, process.env.JWT_KEY);
+    const { role, name } = jwt.verify(token, process.env.JWT_KEY);
     if (role !== "Admin") {
       logger.error("Not authorized");
       return res.status(403).send({ message: "Not authorized" });
@@ -246,7 +246,7 @@ positionRoute.post("/positions/:id", async (req, res) => {
       !category ||
       !applicationProcess ||
       !openings ||
-      !openingsPOC || 
+      !openingsPOC ||
       !minSalary ||
       !maxSalary ||
       !locations ||
@@ -262,7 +262,7 @@ positionRoute.post("/positions/:id", async (req, res) => {
       !twelvePer ||
       !gender
     ) {
-     return res.status(401).send({ message: "fill all the details" });
+      return res.status(401).send({ message: "fill all the details" });
     }
     if (
       typeof openings !== "number" ||
@@ -281,11 +281,11 @@ positionRoute.post("/positions/:id", async (req, res) => {
       ...req.body,
       companyName: company.companyName,
       companyId: id,
-      poc: name
+      poc: name,
     });
-    
+
     const savedPosition = await position.save();
-   
+
     const positionEligibilityData = await positionEligibilityModel.find({});
 
     if (positionEligibilityData.length <= 0) {

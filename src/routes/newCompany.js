@@ -64,7 +64,7 @@ function properName(companyName) {
  *                              type :  string
  *                      leadSource :
  *                             type :  string
- *                 
+ *
  *
  *
  */
@@ -72,7 +72,7 @@ function properName(companyName) {
 // getCompanyDetails details//
 /**
  * @swagger
- * 
+ *
  * securityDefinitions:
  *   bearerAuth:
  *     type: apiKey
@@ -103,8 +103,8 @@ function properName(companyName) {
 companyRoute.get("/getCompany", companyCacheData, async (req, res) => {
   try {
     const token = req.headers["authorization"]?.split(" ")[1];
-    console.log(req.headers.authorization) ;
-    
+    console.log(req.headers.authorization);
+
     if (!token) {
       logger.error("No token provided");
       return res.status(401).send({ message: "Unauthorized" });
@@ -132,7 +132,7 @@ companyRoute.get("/getCompany", companyCacheData, async (req, res) => {
   } catch (error) {
     logger.error("Error getting company data", error);
     return res.status(500).send({ message: "Internal server error" });
-  }finally {
+  } finally {
     client.quit();
   }
 });
@@ -193,7 +193,7 @@ companyRoute.get("/singleCompany", async (req, res) => {
   } catch (error) {
     logger.error("Error verifying token", error);
     return res.status(500).send({ message: "Internal server error" });
-  } 
+  }
 });
 
 // get particular company by id //
@@ -224,7 +224,7 @@ companyRoute.get("/singleCompany", async (req, res) => {
  */
 companyRoute.get(
   "/getParticularCompany/:id",
-  
+
   async (req, res) => {
     try {
       const token = req.headers["authorization"]?.split(" ")[1];
@@ -299,7 +299,6 @@ companyRoute.post("/createCompany", async (req, res) => {
       return res.status(403).send({ message: "Not authorized" });
     }
 
-   
     const {
       companyName,
       websiteUrl,
@@ -331,10 +330,10 @@ companyRoute.post("/createCompany", async (req, res) => {
     }
 
     const toTitleCase = properName(companyName);
-    const isCompany = await companyData.find({companyName : toTitleCase }) ;
-   
-    if(isCompany.length  > 0){
-      return res.status(201).send({message : "Already company available"})
+    const isCompany = await companyData.find({ companyName: toTitleCase });
+
+    if (isCompany.length > 0) {
+      return res.status(201).send({ message: "Already company available" });
     }
     const company = new companyData({
       ...req.body,
@@ -344,12 +343,16 @@ companyRoute.post("/createCompany", async (req, res) => {
     await company.save();
     client.del("companyData", (err, reply) => {
       if (err) {
-        logger.error("Failed to delete company data key in Redis", { error: err });
+        logger.error("Failed to delete company data key in Redis", {
+          error: err,
+        });
       } else {
         logger.info("Successfully deleted company key in Redis");
       }
     });
-    logger.info({ message: "Delete company and related positions also send to redis" });
+    logger.info({
+      message: "Delete company and related positions also send to redis",
+    });
 
     return res.status(201).send({ message: "New company added successfully" });
   } catch (error) {
@@ -426,14 +429,16 @@ companyRoute.patch("/editCompany/:id", async (req, res) => {
           .status(404)
           .send({ message: "unsuccessful data edition check details" });
       });
-      client.del("companyData", (err, reply) => {
-        if (err) {
-          logger.error("Failed to delete company key in Redis", { error: err });
-        } else {
-          logger.info("Successfully deleted positionData key in Redis");
-        }
-      });
-      logger.info({ message: "Delete company and related positions also send to redis" });
+    client.del("companyData", (err, reply) => {
+      if (err) {
+        logger.error("Failed to delete company key in Redis", { error: err });
+      } else {
+        logger.info("Successfully deleted positionData key in Redis");
+      }
+    });
+    logger.info({
+      message: "Delete company and related positions also send to redis",
+    });
   } catch (error) {
     logger.error("edit company error", { error: error });
     return res.status(500).send({ message: "Internal Server Error" });
@@ -476,31 +481,36 @@ companyRoute.delete("/deleteCompany/:id", async (req, res) => {
       logger.error("Not authorized");
       return res.status(403).send({ message: "Not authorized" });
     }
-      const { id } = req.params;
+    const { id } = req.params;
 
-      const deleteCompany = await companyData.findByIdAndDelete({ _id: id });
-      res.status(201).send({ message: "data delete successful" });
+    const deleteCompany = await companyData.findByIdAndDelete({ _id: id });
+    res.status(201).send({ message: "data delete successful" });
 
-      // set new data to redis //
-      const companyDataResult = await companyData.find({});
-      if (companyDataResult.length == 0) {
-        res.status(404).send({ messge: "no data found" });
+    // set new data to redis //
+    const companyDataResult = await companyData.find({});
+    if (companyDataResult.length == 0) {
+      res.status(404).send({ messge: "no data found" });
+    }
+    client.setEx("companyData", 60, JSON.stringify(companyDataResult));
+
+    const positionEligibilityData = await positionEligibilityModel.deleteMany({
+      companyId: id,
+    });
+    if (positionEligibilityData.deletedCount <= 0) {
+      logger.info("No related positions found");
+    }
+    client.del("positionData", (err, reply) => {
+      if (err) {
+        logger.error("Failed to delete positionData key in Redis", {
+          error: err,
+        });
+      } else {
+        logger.info("Successfully deleted positionData key in Redis");
       }
-      client.setEx("companyData", 60, JSON.stringify(companyDataResult));
-
-      const positionEligibilityData = await positionEligibilityModel.deleteMany({ companyId: id });
-      if (positionEligibilityData.deletedCount <= 0) {
-        logger.info( "No related positions found" );
-      }
-       client.del("positionData", (err, reply) => {
-        if (err) {
-          logger.error("Failed to delete positionData key in Redis", { error: err });
-        } else {
-          logger.info("Successfully deleted positionData key in Redis");
-        }
-      });
-      logger.info({ message: "Delete company and related positions also send to redis" });
-    
+    });
+    logger.info({
+      message: "Delete company and related positions also send to redis",
+    });
   } catch (error) {
     logger.error("delete company error", { error: error });
     return res.status(500).send({ message: "Internal Server Error" });

@@ -22,7 +22,10 @@ function companyCacheData(req, res, next) {
     if (data !== null) {
       return res
         .status(201)
-        .send({ message: " company data from redis", companyDataResult: JSON.parse(data) });
+        .send({
+          message: " company data from redis",
+          companyDataResult: JSON.parse(data),
+        });
     } else {
       next();
     }
@@ -35,11 +38,13 @@ function particularCompanyCache(req, res, next) {
   client.get("singleCompany", (err, data) => {
     if (err) throw err;
     if (data !== null) {
-      console.log(data)
+      console.log(data);
       return res
         .status(201)
-        .send({ message: " company data from redis", getParticularCompany: JSON.parse(data) });
-        
+        .send({
+          message: " company data from redis",
+          getParticularCompany: JSON.parse(data),
+        });
     } else {
       next();
     }
@@ -54,13 +59,15 @@ function postionCacheData(req, res, next) {
     if (data !== null) {
       return res
         .status(201)
-        .send({ message: "position data from redis", positionEligibilityData: JSON.parse(data) });
+        .send({
+          message: "position data from redis",
+          positionEligibilityData: JSON.parse(data),
+        });
     } else {
       next();
     }
   });
 }
-
 
 // get particular position //
 
