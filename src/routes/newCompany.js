@@ -3,15 +3,17 @@ dotenv.config();
 const Router = require("express");
 const companyRoute = Router();
 const companyData = require("../models/newCompanyModel");
+const positionEligibilityModel = require("../models/positionModel");
 const authAdmin = require("../middleware/adminAuth");
 const studentAuth = require("../middleware/studentAuth");
+const jwt = require("jsonwebtoken");
+
 const logger = require("./logger");
 const {
   client,
   companyCacheData,
   particularCompanyCache,
 } = require("../../redis");
-
 // check valid url function //
 
 function validUrl(url) {
@@ -38,7 +40,7 @@ function properName(companyName) {
 /**
  * @swagger
  * components:
- *      schemas :
+ *      schema :
  *        newCompany :
  *                   type : object
  *                   properties :
@@ -62,47 +64,75 @@ function properName(companyName) {
  *                              type :  string
  *                      leadSource :
  *                             type :  string
- *                      companyLogo :
- *                              type : string
- *                              format: binary
+ *                 
+ *
  *
  */
 
 // getCompanyDetails details//
 /**
  * @swagger
+ * 
+ * securityDefinitions:
+ *   bearerAuth:
+ *     type: apiKey
+ *     name: Authorization
+ *     in: header
+ *
  * /getCompany:
  *   get:
- *     summary: Get a list of all companies
- *     description: Returns a list of all companies
+ *     summary: Get a list of all company
+ *     description: Returns a list of all company
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: Authorization
+ *         in: header
+ *         description: Access token obtained from authentication service
+ *         required: true
+ *         type: string
  *     responses:
  *       200:
- *         description: A list of companies
+ *         description: A list of company
  *       401:
- *          description: data not appropriate
- *       501 :
- *            description: Internet server problem
- *
+ *          description: Unauthorized
+ *       501:
+ *          description: Internet server problem
  */
 
-companyRoute.get("/getCompany", companyCacheData, async (req, res, next) => {
+companyRoute.get("/getCompany", companyCacheData, async (req, res) => {
   try {
-    console.log("fetching data from database.......");
+    const token = req.headers["authorization"]?.split(" ")[1];
+    console.log(req.headers.authorization) ;
+    
+    if (!token) {
+      logger.error("No token provided");
+      return res.status(401).send({ message: "Unauthorized" });
+    }
+    const verification = jwt.verify(token, process.env.JWT_KEY);
+
+    if (!verification) {
+      logger.error("Not verified");
+      return res.status(403).send({ message: "Forbidden" });
+    }
+
+    logger.info("Fetching data from database.......");
     const companyDataResult = await companyData.find({});
     if (companyDataResult.length == 0) {
-      return res.status(404).send({ messge: "no data found" });
+      return res.status(404).send({ message: "No data found" });
     }
 
     client.setEx("companyData", 60, JSON.stringify(companyDataResult));
+    logger.info("Set repo getCompany value in Redis");
 
-    logger.log("info", "Set repo getCompany value in Redis");
-    return res
-      .status(201)
-      .send({ message: "company Data from database", companyDataResult });
-  } catch (err) {
-    logger.error("error comes while getcompany", { error: err });
-    next(err);
-  } finally {
+    return res.status(201).send({
+      message: "Company data from database",
+      companyDataResult,
+    });
+  } catch (error) {
+    logger.error("Error getting company data", error);
+    return res.status(500).send({ message: "Internal server error" });
+  }finally {
     client.quit();
   }
 });
@@ -129,26 +159,41 @@ companyRoute.get("/getCompany", companyCacheData, async (req, res, next) => {
  */
 
 companyRoute.get("/singleCompany", async (req, res) => {
-  const { companyName } = req.query;
+  try {
+    const token = req.headers["authorization"]?.split(" ")[1];
 
-  const properNameFormat = properName(companyName);
-  const queryObj = {};
-  if (properNameFormat) {
-    queryObj.companyName = { $regex: properNameFormat, $options: "i" };
-  }
+    if (!token) {
+      logger.error("No token provided");
+      return res.status(401).send({ message: "Unauthorized" });
+    }
+    const { role } = jwt.verify(token, process.env.JWT_KEY);
+    if (role !== "Admin") {
+      logger.error("Not authorized");
+      return res.status(403).send({ message: "Access denied" });
+    }
 
-  await companyData.find(queryObj).exec((err, items) => {
-    if (err) {
-      logger.error("error comes while serach company", { error: err });
-      return res.status(500).send({ meassge: "searching error", err });
+    const { companyName } = req.query;
+    const properNameFormat = properName(companyName);
+    const queryObj = {};
+    if (properNameFormat) {
+      queryObj.companyName = { $regex: properNameFormat, $options: "i" };
     }
-    if (items.length <= 0) {
-      return res
-        .status(401)
-        .send({ message: "no comapny available or once check company name" });
-    }
-    return res.status(201).send(items);
-  });
+
+    await companyData.find(queryObj).exec((err, items) => {
+      if (err) {
+        return res.status(500).send({ message: "Error searching", err });
+      }
+      if (items.length === 0) {
+        return res.status(404).send({
+          message: "No matching company found or check company name",
+        });
+      }
+      return res.status(200).send(items);
+    });
+  } catch (error) {
+    logger.error("Error verifying token", error);
+    return res.status(500).send({ message: "Internal server error" });
+  } 
 });
 
 // get particular company by id //
@@ -179,24 +224,38 @@ companyRoute.get("/singleCompany", async (req, res) => {
  */
 companyRoute.get(
   "/getParticularCompany/:id",
-  particularCompanyCache,
+  
   async (req, res) => {
     try {
+      const token = req.headers["authorization"]?.split(" ")[1];
+
+      if (!token) {
+        logger.error("No token provided");
+        return res.status(401).send({ message: "Unauthorized" });
+      }
+      const verification = jwt.verify(token, process.env.JWT_KEY);
+
+      if (!verification) {
+        logger.error("Not verified");
+        return res.status(403).send({ message: "Forbidden" });
+      }
       const { id } = req.params;
 
       const getParticularCompany = await companyData.findById({ _id: id });
       if (getParticularCompany.length == 0) {
         return res.status(401).send({ message: "check id or data not found" });
       }
-      client.setEx("singleCompany", 60, JSON.stringify(getParticularCompany));
-      logger.log("info", "Set repo getParticularCompany value in Redis");
+      // client.setEx("singleCompany", 5, JSON.stringify(getParticularCompany));
+      // logger.log("info", "Set repo getParticularCompany value in Redis");
 
       return res
         .status(201)
         .send({ message: "company Data from database", getParticularCompany });
     } catch (err) {
       logger.error("error comes while get particular company", { error: err });
-      next(err);
+      return res
+        .status(401)
+        .send({ message: "error while get company or check company id" });
     } finally {
       client.quit();
     }
@@ -216,7 +275,7 @@ companyRoute.get(
  *
  *             application/json:
  *                  schema:
- *                      $ref : "#/components/schemas/newCompany"
+ *                      $ref : "#/components/schema/newCompany"
  *
  *     responses:
  *       200:
@@ -227,49 +286,76 @@ companyRoute.get(
  *            description: Internet server problem
  *
  */
-companyRoute.post("/createCompany", authAdmin, async (req, res) => {
-  const {
-    companyName,
-    websiteUrl,
-    companySegment,
-    industry,
-    description,
-    whyApply,
-    linkdinUrl,
-    glassdoorUrl,
-    ambitionBox,
-    leadSource,
-  } = req.body;
-
-  if (
-    !companyName ||
-    !websiteUrl ||
-    !companySegment ||
-    !industry ||
-    !description ||
-    !whyApply ||
-    !leadSource
-  ) {
-    return res.status(404).send({ message: "Please fill required data" });
-  }
-  if (!validUrl(websiteUrl)) {
-    logger.info("please enter valid company url");
-    return res.status(401).send({ meassge: "please enter valid company url" });
-  }
-
-  const toTitleCase = properName(companyName);
-
-  new companyData({ ...req.body, companyName: toTitleCase }).save(
-    (err, success) => {
-      if (err) {
-        logger.error("post company data error", { error: err });
-        return res.status(401).send({ message: "data not save in database" });
-      }
-      return res
-        .status(201)
-        .send({ message: "New company added successfully" });
+companyRoute.post("/createCompany", async (req, res) => {
+  try {
+    const token = req.headers["authorization"]?.split(" ")[1];
+    if (!token) {
+      logger.error("No token provided");
+      return res.status(401).send({ message: "Unauthorized" });
     }
-  );
+    const { role } = jwt.verify(token, process.env.JWT_KEY);
+    if (role !== "Admin") {
+      logger.error("Not authorized");
+      return res.status(403).send({ message: "Not authorized" });
+    }
+
+   
+    const {
+      companyName,
+      websiteUrl,
+      companySegment,
+      industry,
+      description,
+      whyApply,
+      linkdinUrl,
+      glassdoorUrl,
+      ambitionBox,
+      leadSource,
+    } = req.body;
+
+    if (
+      !companyName ||
+      !websiteUrl ||
+      !companySegment ||
+      !industry ||
+      !description ||
+      !whyApply ||
+      !leadSource
+    ) {
+      return res.status(400).send({ message: "Please fill required data" });
+    }
+    if (!validUrl(websiteUrl)) {
+      return res
+        .status(400)
+        .send({ message: "Please enter a valid company URL" });
+    }
+
+    const toTitleCase = properName(companyName);
+    const isCompany = await companyData.find({companyName : toTitleCase }) ;
+   
+    if(isCompany.length  > 0){
+      return res.status(201).send({message : "Already company available"})
+    }
+    const company = new companyData({
+      ...req.body,
+      companyName: toTitleCase,
+    });
+
+    await company.save();
+    client.del("companyData", (err, reply) => {
+      if (err) {
+        logger.error("Failed to delete company data key in Redis", { error: err });
+      } else {
+        logger.info("Successfully deleted company key in Redis");
+      }
+    });
+    logger.info({ message: "Delete company and related positions also send to redis" });
+
+    return res.status(201).send({ message: "New company added successfully" });
+  } catch (error) {
+    logger.error("createCompany error", { error: error });
+    return res.status(500).send({ message: "Internal Server Error" });
+  }
 });
 
 // upadte company details //
@@ -293,7 +379,7 @@ companyRoute.post("/createCompany", authAdmin, async (req, res) => {
  *            content :
  *               application/json:
  *                      schema:
- *                          $ref : "#/components/schemas/newCompany"
+ *                          $ref : "#/components/schema/newCompany"
  *     responses:
  *       200:
  *         description: Delete company details successfully
@@ -304,33 +390,54 @@ companyRoute.post("/createCompany", authAdmin, async (req, res) => {
  *
  */
 companyRoute.patch("/editCompany/:id", async (req, res) => {
-  const { id } = req.params;
-  const { companyName, websiteUrl } = req.body;
-
-  let properNameFormat;
-  if (companyName) {
-    properNameFormat = properName(companyName);
-  }
-  if (websiteUrl) {
-    if (!validUrl(websiteUrl)) {
-      logger.info("please enter valid company url");
-      return res
-        .status(401)
-        .send({ meassge: "please enter valid company url" });
+  try {
+    const token = req.headers["authorization"].split(" ")[1];
+    if (!token) {
+      logger.error("No token provided");
+      return res.status(401).send({ message: "Unauthorized" });
     }
-  }
+    const { role } = jwt.verify(token, process.env.JWT_KEY);
+    if (role !== "Admin") {
+      logger.error("Not authorized");
+      return res.status(403).send({ message: "Not authorized" });
+    }
+    const { id } = req.params;
+    const { companyName, websiteUrl } = req.body;
 
-  await companyData
-    .updateMany({ _id: id }, { ...req.body, companyName: properNameFormat })
-    .then(() => {
-      res.status(201).send({ message: "Details successfully edit" });
-    })
-    .catch((e) => {
-      logger.error("editing company data error", { error: e });
-      return res
-        .status(404)
-        .send({ message: "unsuccessful data edition check details" });
-    });
+    let properNameFormat;
+    if (companyName) {
+      properNameFormat = properName(companyName);
+    }
+    if (websiteUrl) {
+      if (!validUrl(websiteUrl)) {
+        return res
+          .status(401)
+          .send({ meassge: "please enter valid company url" });
+      }
+    }
+
+    await companyData
+      .updateMany({ _id: id }, { ...req.body, companyName: properNameFormat })
+      .then(() => {
+        res.status(201).send({ message: "Details successfully edit" });
+      })
+      .catch((e) => {
+        res
+          .status(404)
+          .send({ message: "unsuccessful data edition check details" });
+      });
+      client.del("companyData", (err, reply) => {
+        if (err) {
+          logger.error("Failed to delete company key in Redis", { error: err });
+        } else {
+          logger.info("Successfully deleted positionData key in Redis");
+        }
+      });
+      logger.info({ message: "Delete company and related positions also send to redis" });
+  } catch (error) {
+    logger.error("edit company error", { error: error });
+    return res.status(500).send({ message: "Internal Server Error" });
+  }
 });
 
 // delte company details //
@@ -358,19 +465,46 @@ companyRoute.patch("/editCompany/:id", async (req, res) => {
  */
 
 companyRoute.delete("/deleteCompany/:id", async (req, res) => {
-  const { id } = req.params;
+  try {
+    const token = req.headers["authorization"].split(" ")[1];
+    if (!token) {
+      logger.error("No token provided");
+      return res.status(401).send({ message: "Unauthorized" });
+    }
+    const { role } = jwt.verify(token, process.env.JWT_KEY);
+    if (role !== "Admin") {
+      logger.error("Not authorized");
+      return res.status(403).send({ message: "Not authorized" });
+    }
+      const { id } = req.params;
 
-  await companyData
-    .findByIdAndDelete({ _id: id })
-    .then(() => {
-      return res.status(201).send({ message: "data delete successful" });
-    })
-    .catch((e) => {
-      logger.error("delete company data error", { error: e });
-      return res.status(404).send({
-        message: "delete unsuccessful or might be data already delete",
+      const deleteCompany = await companyData.findByIdAndDelete({ _id: id });
+      res.status(201).send({ message: "data delete successful" });
+
+      // set new data to redis //
+      const companyDataResult = await companyData.find({});
+      if (companyDataResult.length == 0) {
+        res.status(404).send({ messge: "no data found" });
+      }
+      client.setEx("companyData", 60, JSON.stringify(companyDataResult));
+
+      const positionEligibilityData = await positionEligibilityModel.deleteMany({ companyId: id });
+      if (positionEligibilityData.deletedCount <= 0) {
+        logger.info( "No related positions found" );
+      }
+       client.del("positionData", (err, reply) => {
+        if (err) {
+          logger.error("Failed to delete positionData key in Redis", { error: err });
+        } else {
+          logger.info("Successfully deleted positionData key in Redis");
+        }
       });
-    });
+      logger.info({ message: "Delete company and related positions also send to redis" });
+    
+  } catch (error) {
+    logger.error("delete company error", { error: error });
+    return res.status(500).send({ message: "Internal Server Error" });
+  }
 });
 
 module.exports = companyRoute;

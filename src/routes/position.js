@@ -1,9 +1,10 @@
 const express = require("express");
 const positionRoute = express.Router();
-const posModel = require("../models/positionModel");
+const positionEligibilityModel = require("../models/positionModel");
 const studentAuth = require("../middleware/studentAuth");
 const companyData = require("../models/newCompanyModel");
 const logger = require("./logger");
+const jwt = require("jsonwebtoken");
 const {
   client,
   postionCacheData,
@@ -37,11 +38,29 @@ const {
  *                      workingMode:
  *                             type :  string
  *                      relocation:
- *                             type :  [string]
+ *                             type :  string
  *                      bond :
  *                             type : string
  *                      additionalCriteria :
  *                             type : string
+ *                      degrees :
+ *                             type :  [string]
+ *                      streams :
+ *                             type :  [string]
+ *                      graduationsYear :
+ *                             type :  number
+ *                      locationDomiciles :
+ *                             type :  [string]
+ *                      tenthPer :
+ *                             type :  number
+ *                      gender :
+ *                             type :  string
+ *                             enum :
+ *                              - Male
+ *                              - Female
+ *                              - Other
+ *
+ *
  */
 
 /**
@@ -61,23 +80,37 @@ const {
  */
 positionRoute.get("/position", postionCacheData, async (req, res) => {
   try {
-    const positionData = await posModel.find();
-    if (positionData.length <= 0) {
-      return res.status(401).send({ message: "no data available" });
+    const token = req.headers["authorization"]?.split(" ")[1];
+
+    if (!token) {
+      logger.error("No token provided");
+      return res.status(401).send({ message: "Unauthorized" });
     }
 
-    client.setEx("postionData", 60, JSON.stringify(positionData));
-    logger.info("position data set to redis");
-    return res
-      .status(201)
-      .send({ message: "position Data from database", positionData });
-  } catch (err) {
-    logger.error("position get error", { error: err });
-    next(err);
-  } finally {
-    client.quit();
+    const verification = jwt.verify(token, process.env.JWT_KEY);
+    if (!verification) {
+      logger.error("Not verified");
+      return res.status(403).send({ message: "Forbidden" });
+    }
+
+    const positionEligibilityData = await positionEligibilityModel.find({});
+    if (!positionEligibilityData || positionEligibilityData.length <= 0) {
+      return res.status(404).send({ message: "Data not available" });
+    }
+
+    client.setEx("positionData", 60, JSON.stringify(positionEligibilityData));
+    logger.info("Position data set to Redis");
+    
+    return res.status(200).send({
+      message: "List of positions with eligibility",
+      positionEligibilityData,
+    });
+  } catch (error) {
+    logger.error("Error while getting position data", { error: error });
+    return res.status(500).send({ message: "Internal server error" });
   }
 });
+
 /**
  * @swagger
  * /position/{id}:
@@ -105,34 +138,41 @@ positionRoute.get("/position", postionCacheData, async (req, res) => {
  */
 positionRoute.get(
   "/position/:id",
-  particularPositionCache,
+  
   async (req, res) => {
     try {
+      const token = req.headers["authorization"]?.split(" ")[1];
+
+      if (!token) {
+        logger.error("No token provided");
+        return res.status(401).send({ message: "Unauthorized" });
+      }
+      const verification = jwt.verify(token, process.env.JWT_KEY);
+
+      if (!verification) {
+        logger.error("Not verified");
+        return res.status(403).send({ message: "Forbidden" });
+      }
       let { id } = req.params;
-      const particularPositionData = await posModel
-        .findOne({ _id: id })
-        .populate({
-          path: "eligibilityId",
-        });
-      if (particularPositionData <= 0) {
+      const ParticularPositionEligible = await positionEligibilityModel.findOne(
+        { _id: id }
+      );
+      if (ParticularPositionEligible.length <= 0) {
         return res
           .status(401)
-          .send({ message: "data not available or check id" });
+          .send({ message: " data not available or check id" });
       }
-      client.setEx(
-        "particularPosition",
-        60,
-        JSON.stringify(particularPositionData)
-      );
-      logger.info("position data set to redis");
-      res
-        .status(200)
-        .send({ message: " data of this position", particularPositionData });
-    } catch (err) {
-      logger.error("position get error", { error: err });
-      next(err);
-    } finally {
-      client.quit();
+    
+      return res.status(200).send({
+        message: " data of this position and eligibility",
+        ParticularPositionEligible,
+      });
+    } catch (error) {
+      logger.error("position get error", { error: error });
+
+      return res
+        .status(500)
+        .send({ message: "Internal Server Error data not getting" });
     }
   }
 );
@@ -168,12 +208,23 @@ positionRoute.get(
  */
 positionRoute.post("/positions/:id", async (req, res) => {
   try {
+    const token = req.headers["authorization"].split(" ")[1];
+    if (!token) {
+      logger.error("No token provided");
+      return res.status(401).send({ message: "Unauthorized" });
+    }
+    const { role , name} = jwt.verify(token, process.env.JWT_KEY);
+    if (role !== "Admin") {
+      logger.error("Not authorized");
+      return res.status(403).send({ message: "Not authorized" });
+    }
     const { id } = req.params;
     const {
       title,
       category,
       applicationProcess,
       openings,
+      openingsPOC,
       minSalary,
       maxSalary,
       locations,
@@ -182,52 +233,72 @@ positionRoute.post("/positions/:id", async (req, res) => {
       relocation,
       bond,
       additionalCriteria,
+      degrees,
+      streams,
+      graduationsYear,
+      locationDomiciles,
+      tenthPer,
+      twelvePer,
+      gender,
     } = req.body;
     if (
       !title ||
       !category ||
       !applicationProcess ||
       !openings ||
+      !openingsPOC || 
       !minSalary ||
       !maxSalary ||
       !locations ||
       !rounds ||
       !workingMode ||
-      !maxSalary ||
       !relocation ||
       !bond ||
-      !additionalCriteria
+      !degrees ||
+      !streams ||
+      !graduationsYear ||
+      !locationDomiciles ||
+      !tenthPer ||
+      !twelvePer ||
+      !gender
     ) {
-      logger.info("fill all the details");
-      return res.status(401).send({ message: "fill all the details" });
+     return res.status(401).send({ message: "fill all the details" });
     }
     if (
       typeof openings !== "number" ||
       !Array.isArray(locations) ||
       locations.some((location) => typeof location !== "string")
     ) {
-      logger.info("Invalid input data types");
       return res.status(400).send({ message: "Invalid input data types" });
     }
     const company = await companyData.findOne({ _id: id });
 
     if (!company) {
-      logger.info("Company not found");
       return res.status(404).json({ message: "Company not found" });
     }
 
-    const position = new posModel({
+    const position = new positionEligibilityModel({
       ...req.body,
       companyName: company.companyName,
       companyId: id,
+      poc: name
     });
+    
     const savedPosition = await position.save();
+   
+    const positionEligibilityData = await positionEligibilityModel.find({});
 
-    // const savedCompany = await company.save();
-    return res.status(201).send({ message: "Position save successfully" });
-  } catch (err) {
-    logger.error("position post with id  error", { error: err });
-    return res.status(500).json({ message: "Server Error" });
+    if (positionEligibilityData.length <= 0) {
+      return res.status(404).send({ message: "data not available" });
+    }
+    client.setEx("positionData", 60, JSON.stringify(positionEligibilityData));
+    logger.info("position data set to redis");
+    return res
+      .status(201)
+      .send({ message: "Position save successfully", id: position._id });
+  } catch (error) {
+    logger.error("post position error", { error: error });
+    return res.status(500).send({ message: "Internal Server Error", error });
   }
 });
 
@@ -263,16 +334,39 @@ positionRoute.post("/positions/:id", async (req, res) => {
  */
 positionRoute.patch("/updatePosition/:id", async (req, res) => {
   try {
+    const token = req.headers["authorization"].split(" ")[1];
+    if (!token) {
+      logger.error("No token provided");
+      return res.status(401).send({ message: "Unauthorized" });
+    }
+    const { role } = jwt.verify(token, process.env.JWT_KEY);
+    if (role !== "Admin") {
+      logger.error("Not authorized");
+      return res.status(403).send({ message: "Forbidden" });
+    }
+
     let { id } = req.params;
     const updateData = req.body;
-    const Data = await posModel.findByIdAndUpdate(id, updateData, {
-      new: true,
-    });
-    logger.info("position updated successfully");
+    const Data = await positionEligibilityModel.findByIdAndUpdate(
+      id,
+      updateData,
+      {
+        new: true,
+      }
+    );
+
+    // set data to redis //
+    const positionEligibilityData = await positionEligibilityModel.find({});
+
+    if (positionEligibilityData.length <= 0) {
+      return res.status(404).send({ message: "data not available" });
+    }
+    client.setEx("positionData", 60, JSON.stringify(positionEligibilityData));
+    logger.info("position data set to redis");
     return res.status(200).send({ message: "position updated successfully" });
-  } catch (err) {
-    logger.error("position patch with id  error", { error: err });
-    res.status(401).send({ message: "position updated unsuccessfully" });
+  } catch (error) {
+    console.log(error);
+    return res.status(401).send({ message: "position updated unsuccessfully" });
   }
 });
 
@@ -300,10 +394,35 @@ positionRoute.patch("/updatePosition/:id", async (req, res) => {
  */
 
 positionRoute.delete("/deletePosition/:id", async (req, res) => {
-  let { id } = req.params;
-  const Data = await posModel.findByIdAndDelete({ _id: id });
-  logger.info("position deleted successfully");
- return res.status(200).send({ message: "position deleted successfully", Data });
+  try {
+    const token = req.headers["authorization"].split(" ")[1];
+    if (!token) {
+      logger.error("No token provided");
+      return res.status(401).send({ message: "Unauthorized" });
+    }
+    const { role } = jwt.verify(token, process.env.JWT_KEY);
+    if (role !== "Admin") {
+      logger.error("Not authorized");
+      return res.status(403).send({ message: "Not authorized" });
+    }
+    let { id } = req.params;
+    const Data = await positionEligibilityModel.findByIdAndDelete({ _id: id });
+
+    res.status(200).send({ message: "position deleted successfully" });
+
+    // redis set updated data //
+
+    const positionEligibilityData = await positionEligibilityModel.find({});
+
+    if (positionEligibilityData.length <= 0) {
+      return res.status(404).send({ message: "data not available" });
+    }
+    client.setEx("positionData", 60, JSON.stringify(positionEligibilityData));
+    logger.info("position data set to redis");
+  } catch (error) {
+    logger.error("delete position error", { error });
+    return res.status(500).send({ message: "Internal server error" });
+  }
 });
 
 module.exports = positionRoute;
