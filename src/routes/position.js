@@ -1,7 +1,6 @@
 const express = require("express");
 const positionRoute = express.Router();
 const posModel = require("../models/positionModel");
-const studentAuth = require("../middleware/studentAuth");
 const companyData = require("../models/newCompanyModel");
 const logger = require("./logger");
 const {
@@ -180,7 +179,7 @@ positionRoute.post("/positions/:id", async (req, res) => {
       companyId: id,
     });
     const savedPosition = await position.save();
-    return res.status(201).send({ message: "Position save successfully",savedPosition });
+    return res.status(201).send({ message: "Position save successfully"});
   } catch (err) {
     logger.error("position post with id  error", { error: err });
     return res.status(500).json({ message: "Server Error" });

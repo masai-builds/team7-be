@@ -15,15 +15,22 @@ client.on("error", (err) => console.log("Redis Client Error", err));
 
 // get all company cache //
 function companyCacheData(req, res, next) {
-  client.get("companyData", (err, data) => {
-    if (err) throw err;
+  if (client.connected){
+    client.get("companyData", (err, data) => {
+      if (err) throw err;
+  
+      if (data !== null) {
+        return res .status(201) .send({ message: " company data from redis", data: JSON.parse(data) });
+      } else {
+        next();
+      }
+    });
+  } else {
+    // Redis client is not connected, handle error
+    const err = new Error("Redis client not connected");
+    return next(err);
+  }
 
-    if (data !== null) {
-      return res .status(201) .send({ message: " company data from redis", data: JSON.parse(data) });
-    } else {
-      next();
-    }
-  });
 }
 
 // get particular company //

@@ -28,11 +28,13 @@ app.use("/", companyRoute);
 app.use("/", eligibilityRoute);
 
 app.get("/", (req, res) => {
-  res.send({ message: "welcome to our website" });
+  res.status(200).send({ message: "welcome to our website" });
 });
 
 app.listen(process.env.PORT, async () => {
   await connection;
   logger.log("info", `listening on port ${process.env.PORT}`);
-  console.log(`server start at ${process.env.PORT} `);
+  console.log(`server start at ${process.env.PORT}`);
 });
+
+module.exports = app;

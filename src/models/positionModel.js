@@ -16,7 +16,17 @@ const positionSchema = mongoose.Schema({
   bond: { type: String, required: false },
   additionalCriteria: { type: String, required: false },
   companyId: { type: String, required: true },
-  timestamp: { type: Date, default: Date.now }
+  timestamp: { type: Date, default: Date.now,
+    get: function (v) {
+    return v.toLocaleString('en-US', {
+      timeZone: 'UTC',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+  
+    }).replace('', '');
+  }
+}
 });
 
 const positionModel = mongoose.model("position", positionSchema);

@@ -136,8 +136,8 @@ authRoute.post("/signup", async (req, res) => {
           userId: success._id,
           email: success.email,
           name: success.name,
-        });
-        return res.status(201).send({ message: "successfully registered" });
+        });  
+      res.status(201).send({ message: "successfully registered" });
       } catch (err) {
         logger.error("Error sending confirmation email", { error: err });
         return res.status(500).send({ message: "Error sending email" });
