@@ -3,14 +3,15 @@ dotenv.config();
 const Router = require("express");
 const authRoute = Router();
 const bcrypt = require("bcrypt");
+const cookieParser = require("cookie-parser");
 const userModel = require("../models/userModel.js");
 const nodemailer = require("nodemailer");
 const jwt = require("jsonwebtoken");
 const handlebars = require("handlebars");
 const fs = require("fs");
 const path = require("path");
-const logger = require("./logger");
 const { v4: uuidv4 } = require("uuid");
+const finduserRole = require("../middleware/adminAuth");
 
 /**
  * @swagger
@@ -65,90 +66,82 @@ const { v4: uuidv4 } = require("uuid");
 
 // signup //
 authRoute.post("/signup", async (req, res) => {
-  try {
-    const userMail = await userModel.findOne({ email: req.body.email });
-    const { email, password, rePassword } = req.body;
-    const uuid = uuidv4();
-    const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/;
+  const userMail = await userModel.findOne({ email: req.body.email });
+  const { name, email, password, rePassword } = req.body;
+  const uuid = uuidv4();
+  const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/;
 
-    if (userMail) {
-      return res.send({ message: "user already registered" });
-    }
+  if (!name) {
+    return res.send({ message: "enter user name" });
+  }
+  if (userMail) {
+    return res.send({ message: "user already registered" });
+  }
+  if (password !== rePassword) {
+    return res
+      .status(400)
+      .send({ message: "Please make sure your passwords match." });
+  }
 
-    if (password !== rePassword) {
-      return res
-        .status(400)
-        .send({ message: "Please make sure your passwords match." });
-    }
-
-    if (!passwordRegex.test(password)) {
-      return res.status(400).send({
-        message:
-          "Password must contain at least 8 characters, including at least 1 number, 1 lowercase letter, and 1 uppercase letter.",
-      });
-    }
-
-    if (!emailReg.test(email)) {
-      return res
-        .status(400)
-        .send({ message: "Please provide a valid email address." });
-    }
-
-    const salt = await bcrypt.genSaltSync(10);
-    const Pass = await bcrypt.hash(req.body.password, salt);
-    const rePass = await bcrypt.hash(req.body.rePassword, salt);
-
-    const user = new userModel({
-      ...req.body,
-      password: Pass,
-      rePassword: rePass,
-      uuid,
+  if (!passwordRegex.test(password)) {
+    return res.status(400).send({
+      message:
+        "Password must contain at least 8 characters, including at least 1 number, 1 lowercase letter, and 1 uppercase letter.",
     });
+  }
 
-    user.save(async (err, success) => {
+  if (!emailReg.test(email)) {
+    return res
+      .status(400)
+      .send({ message: "Please provide a valid email address." });
+  }
+
+  const salt = await bcrypt.genSaltSync(10);
+  const Pass = await bcrypt.hash(req.body.password, salt);
+  const rePass = await bcrypt.hash(req.body.rePassword, salt);
+
+  const user = new userModel({
+    ...req.body,
+    password: Pass,
+    rePassword: rePass,
+    uuid,
+  });
+
+  user.save((err, success) => {
+    if (err) {
+      return res.status(500).send({ message: "error occured" });
+    }
+    const directory = path.join(__dirname, "..", "utils", "signupEmail.html");
+    const fileRead = fs.readFileSync(directory, "utf-8");
+    const template = handlebars.compile(fileRead);
+    const htmlToSend = template({ name: req.body.name, userId: uuid });
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.USER_EMAIL,
+        pass: process.env.USER_PASS,
+      },
+    });
+    const mailOptions = {
+      from: process.env.USER_EMAIL,
+      to: email,
+      subject: "Signup Successfully",
+      html: htmlToSend,
+    };
+
+    transporter.sendMail(mailOptions, (err, info) => {
       if (err) {
-        return res.status(500).send({ message: "error occured" });
-      }
-
-      const directory = path.join(__dirname, "..", "utils", "signupEmail.html");
-      const fileRead = fs.readFileSync(directory, "utf-8");
-      const template = handlebars.compile(fileRead);
-      const htmlToSend = template({ name: req.body.name, userId: uuid });
-
-      const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-          user: process.env.USER_EMAIL,
-          pass: process.env.USER_PASS,
-        },
-      });
-      const mailOptions = {
-        from: process.env.USER_EMAIL,
-        to: email,
-        subject: "Signup Successfully",
-        html: htmlToSend,
-      };
-
-      try {
-        await transporter.sendMail(mailOptions);
-        logger.info("User signed up successfully", {
-          userId: success._id,
-          email: success.email,
-          name: success.name,
-        });  
-      res.status(201).send({ message: "successfully registered" });
-      } catch (err) {
-        logger.error("Error sending confirmation email", { error: err });
         return res.status(500).send({ message: "Error sending email" });
       }
+      return res
+        .status(200)
+        .send({ message: " successfully signup with email" });
     });
-  } catch (error) {
-    logger.error("Error occurred during signup", { error: error });
-    return res.status(500).send({ message: "Error occurred" });
-  }
+    return res.status(201).send({ message: "successfully registered" });
+  });
 });
-
 /**
  * @swagger
  * /auth/emailConform/{uuid}:
@@ -183,7 +176,7 @@ authRoute.patch("/emailConfirm/:id", async (req, res) => {
     user.save();
     return res.status(201).send({ message: "Email verification successs" });
   } catch (error) {
-    return res.status(401).send({ meassge: "Email not verified" });
+    return res.status(401).send({ message: "Email not verified" });
   }
 });
 
@@ -212,57 +205,56 @@ authRoute.patch("/emailConfirm/:id", async (req, res) => {
  */
 
 authRoute.post("/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
 
-    const validUser = await userModel.findOne({ email });
+  const validUser = await userModel.findOne({ email });
 
-    if (!email || !password) {
-      return res.status(422).send({ message: "fill all the details" });
-    }
+  if (!email || !password) {
+    return res.status(422).send({ message: "fill all the details" });
+  }
 
-    if (!validUser) {
-      logger.error("User failed to login", { email: email });
-      return res.status(401).send({ message: "Invalid Credentials" });
-    }
+  if (!validUser) {
+    return res.status(401).send({ message: "Invalid Credentials" });
+  }
 
-    if (!validUser.emailConfirmed) {
-      return res
-        .status(401)
-        .send({ message: "Please confirm your email before logging in" });
-    }
+  if (!validUser.emailConfirmed) {
+    return res
+      .status(401)
+      .send({ message: "Please confirm your email before logging in" });
+  }
 
-    const isMatch = await bcrypt.compare(password, validUser.password);
+  const isMatch = await bcrypt.compare(password, validUser.password);
 
-    if (!isMatch) {
-      return res.status(401).send({ message: "Invalid Credentials" });
-    }
+  if (!isMatch) {
+    return res.status(401).send({ message: "Invalid Credentials" });
+  }
 
-    // authorize based on user role
-    const token = jwt.sign(
-      {
-        name: validUser.name,
-        role: validUser.role,
-        id : validUser._id
-      },
-      process.env.JWT_KEY
-    );
-    
-    // cookiegenerate
-    res.cookie("usercookieAuth", token, {
-      expires: new Date(Date.now() + 9000000),
-      httpOnly: true,
-    });
-    logger.info("User logged in successfully", { userId: validUser._id });
-    res.status(201).send({ message: "Login successful", token , userDetails: {
+  // authorize based on user role
+  const token = jwt.sign(
+    {
       name: validUser.name,
       role: validUser.role,
-      id : validUser._id
-    } });
-  } catch (error) {
-    logger.error("Error occurred during login", { error: error });
-    res.status(500).send({ message: "Something went wrong" });
-  }
+    },
+    process.env.JWT_KEY
+  );
+
+  // cookiegenerate
+  res.cookie("usercookieAuth", token, {
+    expires: new Date(Date.now() + 9000000),
+    httpOnly: true,
+  });
+
+  res
+    .status(201)
+    .send({
+      message: "Login successful",
+      token,
+      userDetails: {
+        userName: validUser.name,
+        id: validUser._id,
+        role: validUser.role,
+      },
+    });
 });
 
 // forgetPassword //
@@ -382,34 +374,7 @@ authRoute.patch("/resetPassword/:id", async (req, res) => {
     return res.json({ status: "User Not Exists!!" });
   }
   if (password !== rePassword) {
-    return res.status(401).send({ meassge: "Password not same " });
-  }
-  try {
-    const salt = await bcrypt.genSaltSync(10);
-    const Pass = await bcrypt.hash(password, salt);
-    const rePass = await bcrypt.hash(rePassword, salt);
-
-    const setNewPass = await userModel.findByIdAndUpdate(
-      { _id: id },
-      { $set: { password: Pass, rePassword: rePass } }
-    );
-    setNewPass.save();
-    res.status(201).send({ message: "Password updated successfully" });
-  } catch (error) {
-    res.json({ status: "Something Went Wrong" });
-  }
-});
-
-//change password
-authRoute.patch("/changePassword/:id", async (req, res) => {
-  const { id } = req.params;
-  const { password, rePassword } = req.body;
-
-  const oldUser = await userModel.findOne({ _id: id });
-  console.log(oldUser);
-
-  if (password !== rePassword) {
-    return res.status(401).send({ meassge: "Password not same " });
+    return res.status(401).send({ message: "Password not same " });
   }
   try {
     const salt = await bcrypt.genSaltSync(10);
