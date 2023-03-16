@@ -6,8 +6,6 @@ const companyData = require("../models/newCompanyModel");
 const positionEligibilityModel = require("../models/positionModel");
 const authAdmin = require("../middleware/adminAuth");
 const studentAuth = require("../middleware/studentAuth");
-const jwt = require("jsonwebtoken");
-
 const logger = require("./logger");
 const {
   client,
@@ -100,42 +98,31 @@ function properName(companyName) {
  *          description: Internet server problem
  */
 
-companyRoute.get("/getCompany", companyCacheData, async (req, res) => {
+companyRoute.get("/getCompany", companyCacheData, async (req, res, next) => {
   try {
-    const token = req.headers["authorization"]?.split(" ")[1];
-    console.log(req.headers.authorization);
-
-    if (!token) {
-      logger.error("No token provided");
-      return res.status(401).send({ message: "Unauthorized" });
-    }
-    const verification = jwt.verify(token, process.env.JWT_KEY);
-
-    if (!verification) {
-      logger.error("Not verified");
-      return res.status(403).send({ message: "Forbidden" });
-    }
-
-    logger.info("Fetching data from database.......");
+    console.log("fetching data from database.......");
     const companyDataResult = await companyData.find({});
     if (companyDataResult.length == 0) {
       return res.status(404).send({ message: "No data found" });
     }
 
     client.setEx("companyData", 60, JSON.stringify(companyDataResult));
-    logger.info("Set repo getCompany value in Redis");
 
-    return res.status(201).send({
-      message: "Company data from database",
-      companyDataResult,
-    });
-  } catch (error) {
-    logger.error("Error getting company data", error);
-    return res.status(500).send({ message: "Internal server error" });
+    logger.log("info", "Set repo getCompany value in Redis");
+    return res
+      .status(201)
+      .send({ message: "company Data from database", companyDataResult });
+  } catch (err) {
+    logger.error("error comes while getcompany", { error: err });
+    next(err);
   } finally {
     client.quit();
   }
 });
+
+
+
+
 
 /**
  * @swagger
@@ -224,38 +211,24 @@ companyRoute.get("/singleCompany", async (req, res) => {
  */
 companyRoute.get(
   "/getParticularCompany/:id",
-
+  particularCompanyCache,
   async (req, res) => {
     try {
-      const token = req.headers["authorization"]?.split(" ")[1];
-
-      if (!token) {
-        logger.error("No token provided");
-        return res.status(401).send({ message: "Unauthorized" });
-      }
-      const verification = jwt.verify(token, process.env.JWT_KEY);
-
-      if (!verification) {
-        logger.error("Not verified");
-        return res.status(403).send({ message: "Forbidden" });
-      }
       const { id } = req.params;
 
       const getParticularCompany = await companyData.findById({ _id: id });
       if (getParticularCompany.length == 0) {
         return res.status(401).send({ message: "check id or data not found" });
       }
-      // client.setEx("singleCompany", 5, JSON.stringify(getParticularCompany));
-      // logger.log("info", "Set repo getParticularCompany value in Redis");
+      client.setEx("singleCompany", 60, JSON.stringify(getParticularCompany));
+      logger.log("info", "Set repo getParticularCompany value in Redis");
 
       return res
         .status(201)
         .send({ message: "company Data from database", getParticularCompany });
     } catch (err) {
       logger.error("error comes while get particular company", { error: err });
-      return res
-        .status(401)
-        .send({ message: "error while get company or check company id" });
+      next(err);
     } finally {
       client.quit();
     }
