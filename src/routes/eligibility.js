@@ -81,25 +81,9 @@ eligRoute.get("/eligibility", async (req, res) => {
  */
 eligRoute.post("/eligibility/:id", async (req, res) => {
   try {
-    const {
-      degrees,
-      streams,
-      graduationsYear,
-      locationDomiciles,
-      tenthPer,
-      twelfthPer,
-      gender,
-    } = req.body;
+    const {degrees,streams,graduationsYear,locationDomiciles,tenthPer,twelfthPer,gender,} = req.body;
     const { id } = req.params;
-    if (
-      !degrees ||
-      !streams ||
-      !graduationsYear ||
-      !locationDomiciles ||
-      !tenthPer ||
-      !twelfthPer ||
-      !gender
-    ) {
+    if (!degrees || !streams || !graduationsYear || !locationDomiciles || !tenthPer || !twelfthPer || !gender ) {
       res.status(401).send({ message: "fill all the details" });
     }
 

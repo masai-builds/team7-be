@@ -43,24 +43,6 @@ const {
  *                             type : string
  *                      additionalCriteria :
  *                             type : string
- *                      degrees :
- *                             type :  [string]
- *                      streams :
- *                             type :  [string]
- *                      graduationsYear :
- *                             type :  number
- *                      locationDomiciles :
- *                             type :  [string]
- *                      tenthPer :
- *                             type :  number
- *                      gender :
- *                             type :  string
- *                             enum :
- *                              - Male
- *                              - Female
- *                              - Other
- *
- *
  */
 
 /**
@@ -137,43 +119,21 @@ positionRoute.get("/position", async (req, res) => {
  *            description: Internet server problem
  *
  */
-positionRoute.get(
-  "/position/:id",
-
-  async (req, res) => {
+positionRoute.get("/position/:id",particularPositionCache, async (req, res) => {
     try {
-      const token = req.headers["authorization"]?.split(" ")[1];
-
-      if (!token) {
-        logger.error("No token provided");
-        return res.status(401).send({ message: "Unauthorized" });
-      }
-      const verification = jwt.verify(token, process.env.JWT_KEY);
-
-      if (!verification) {
-        logger.error("Not verified");
-        return res.status(403).send({ message: "Forbidden" });
-      }
       let { id } = req.params;
-      const ParticularPositionEligible = await positionEligibilityModel.findOne(
-        { _id: id }
-      );
-      if (ParticularPositionEligible.length <= 0) {
-        return res
-          .status(401)
-          .send({ message: " data not available or check id" });
+      const particularPositionData = await posModel.findOne({ _id: id }).populate({path: "eligibilityId"});
+      if (particularPositionData <= 0) {
+        return res.status(401).send({ message: "data not available or check id" });
       }
-
-      return res.status(200).send({
-        message: " data of this position and eligibility",
-        ParticularPositionEligible,
-      });
-    } catch (error) {
-      logger.error("position get error", { error: error });
-
-      return res
-        .status(500)
-        .send({ message: "Internal Server Error data not getting" });
+      client.setEx("particularPosition",60,JSON.stringify(particularPositionData));
+      logger.info("position data set to redis");
+      res.status(200).send({ message: " data of this position", particularPositionData });
+    } catch (err) {
+      logger.error("position get error", { error: err });
+      next(err);
+    } finally {
+      client.quit();
     }
   }
 );
@@ -220,54 +180,15 @@ positionRoute.post("/positions/:id", async (req, res) => {
       return res.status(403).send({ message: "Not authorized" });
     }
     const { id } = req.params;
-    const {
-      title,
-      category,
-      applicationProcess,
-      openings,
-      openingsPOC,
-      minSalary,
-      maxSalary,
-      locations,
-      rounds,
-      workingMode,
-      relocation,
-      bond,
-      additionalCriteria,
-      degrees,
-      streams,
-      graduationsYear,
-      locationDomiciles,
-      tenthPer,
-      twelvePer,
-      gender,
-    } = req.body;
-    if (
-      !title ||
-      !category ||
-      !applicationProcess ||
-      !openings ||
-      !openingsPOC ||
-      !minSalary ||
-      !maxSalary ||
-      !locations ||
-      !rounds ||
-      !workingMode ||
-      !relocation ||
-      !bond ||
-      !degrees ||
-      !streams ||
-      !graduationsYear ||
-      !locationDomiciles ||
-      !tenthPer ||
-      !twelvePer ||
-      !gender
-    ) {
+    const {title,category,applicationProcess,openings,minSalary,maxSalary,
+    locations,rounds,workingMode,relocation,bond,additionalCriteria,} = req.body;
+    if ( !title || !category || !applicationProcess || !openings || !minSalary || !maxSalary || !locations ||
+      !rounds || !workingMode || !maxSalary || !relocation || !bond || !additionalCriteria) {
+
+      logger.info("fill all the details");
       return res.status(401).send({ message: "fill all the details" });
     }
-    if (
-      typeof openings !== "number" ||
-      !Array.isArray(locations) ||
+    if ( typeof openings !== "number" || !Array.isArray(locations) ||
       locations.some((location) => typeof location !== "string")
     ) {
       return res.status(400).send({ message: "Invalid input data types" });
@@ -278,7 +199,7 @@ positionRoute.post("/positions/:id", async (req, res) => {
       return res.status(404).json({ message: "Company not found" });
     }
 
-    const position = new positionEligibilityModel({
+    const position = new posModel({
       ...req.body,
       companyName: company.companyName,
       companyId: id,

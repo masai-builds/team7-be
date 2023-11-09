@@ -5,7 +5,8 @@
   "dev": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "test":"jest"
   },
   "keywords": [],
   "author": "",
@@ -32,5 +33,9 @@
     "uuid": "^9.0.0",
     "winston": "^3.8.2",
     "winston-mongodb": "^5.1.1"
+  },
+  "devDependencies": {
+    "jest": "^29.4.3",
+    "supertest": "^6.3.3"
   }
 }
