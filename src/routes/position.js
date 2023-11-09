@@ -78,8 +78,9 @@ const {
  *            description: Internet server problem
  *
  */
-positionRoute.get("/position", postionCacheData, async (req, res) => {
+positionRoute.get("/position", async (req, res) => {
   try {
+    console.log("getting position")
     const token = req.headers["authorization"]?.split(" ")[1];
 
     if (!token) {
@@ -98,7 +99,7 @@ positionRoute.get("/position", postionCacheData, async (req, res) => {
       return res.status(404).send({ message: "Data not available" });
     }
 
-    client.setEx("positionData", 60, JSON.stringify(positionEligibilityData));
+    // client.setEx("positionData", 60, JSON.stringify(positionEligibilityData));
     logger.info("Position data set to Redis");
 
     return res.status(200).send({
@@ -291,7 +292,7 @@ positionRoute.post("/positions/:id", async (req, res) => {
     if (positionEligibilityData.length <= 0) {
       return res.status(404).send({ message: "data not available" });
     }
-    client.setEx("positionData", 60, JSON.stringify(positionEligibilityData));
+    // client.setEx("positionData", 60, JSON.stringify(positionEligibilityData));
     logger.info("position data set to redis");
     return res
       .status(201)
@@ -361,7 +362,7 @@ positionRoute.patch("/updatePosition/:id", async (req, res) => {
     if (positionEligibilityData.length <= 0) {
       return res.status(404).send({ message: "data not available" });
     }
-    client.setEx("positionData", 60, JSON.stringify(positionEligibilityData));
+    // client.setEx("positionData", 60, JSON.stringify(positionEligibilityData));
     logger.info("position data set to redis");
     return res.status(200).send({ message: "position updated successfully" });
   } catch (error) {
@@ -417,7 +418,7 @@ positionRoute.delete("/deletePosition/:id", async (req, res) => {
     if (positionEligibilityData.length <= 0) {
       return res.status(404).send({ message: "data not available" });
     }
-    client.setEx("positionData", 60, JSON.stringify(positionEligibilityData));
+    // client.setEx("positionData", 60, JSON.stringify(positionEligibilityData));
     logger.info("position data set to redis");
   } catch (error) {
     logger.error("delete position error", { error });

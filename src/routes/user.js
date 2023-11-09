@@ -244,17 +244,15 @@ authRoute.post("/login", async (req, res) => {
     httpOnly: true,
   });
 
-  res
-    .status(201)
-    .send({
-      message: "Login successful",
-      token,
-      userDetails: {
-        userName: validUser.name,
-        id: validUser._id,
-        role: validUser.role,
-      },
-    });
+  res.status(201).send({
+    message: "Login successful",
+    token,
+    userDetails: {
+      userName: validUser.name,
+      id: validUser._id,
+      role: validUser.role,
+    },
+  });
 });
 
 // forgetPassword //

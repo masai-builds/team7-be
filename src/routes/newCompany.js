@@ -100,7 +100,7 @@ function properName(companyName) {
  *          description: Internet server problem
  */
 
-companyRoute.get("/getCompany", companyCacheData, async (req, res) => {
+companyRoute.get("/getCompany", async (req, res) => {
   try {
     const token = req.headers["authorization"]?.split(" ")[1];
     console.log(req.headers.authorization);
@@ -122,7 +122,7 @@ companyRoute.get("/getCompany", companyCacheData, async (req, res) => {
       return res.status(404).send({ message: "No data found" });
     }
 
-    client.setEx("companyData", 60, JSON.stringify(companyDataResult));
+    // client.setEx("companyData", 60, JSON.stringify(companyDataResult));
     logger.info("Set repo getCompany value in Redis");
 
     return res.status(201).send({
@@ -133,7 +133,7 @@ companyRoute.get("/getCompany", companyCacheData, async (req, res) => {
     logger.error("Error getting company data", error);
     return res.status(500).send({ message: "Internal server error" });
   } finally {
-    client.quit();
+    // client.quit();
   }
 });
 
@@ -257,7 +257,7 @@ companyRoute.get(
         .status(401)
         .send({ message: "error while get company or check company id" });
     } finally {
-      client.quit();
+      // client.quit();
     }
   }
 );
@@ -341,15 +341,15 @@ companyRoute.post("/createCompany", async (req, res) => {
     });
 
     await company.save();
-    client.del("companyData", (err, reply) => {
-      if (err) {
-        logger.error("Failed to delete company data key in Redis", {
-          error: err,
-        });
-      } else {
-        logger.info("Successfully deleted company key in Redis");
-      }
-    });
+    // client.del("companyData", (err, reply) => {
+    //   if (err) {
+    //     logger.error("Failed to delete company data key in Redis", {
+    //       error: err,
+    //     });
+    //   } else {
+    //     logger.info("Successfully deleted company key in Redis");
+    //   }
+    // });
     logger.info({
       message: "Delete company and related positions also send to redis",
     });
@@ -429,13 +429,13 @@ companyRoute.patch("/editCompany/:id", async (req, res) => {
           .status(404)
           .send({ message: "unsuccessful data edition check details" });
       });
-    client.del("companyData", (err, reply) => {
-      if (err) {
-        logger.error("Failed to delete company key in Redis", { error: err });
-      } else {
-        logger.info("Successfully deleted positionData key in Redis");
-      }
-    });
+    // client.del("companyData", (err, reply) => {
+    //   if (err) {
+    //     logger.error("Failed to delete company key in Redis", { error: err });
+    //   } else {
+    //     logger.info("Successfully deleted positionData key in Redis");
+    //   }
+    // });
     logger.info({
       message: "Delete company and related positions also send to redis",
     });
@@ -491,7 +491,7 @@ companyRoute.delete("/deleteCompany/:id", async (req, res) => {
     if (companyDataResult.length == 0) {
       res.status(404).send({ messge: "no data found" });
     }
-    client.setEx("companyData", 60, JSON.stringify(companyDataResult));
+    // client.setEx("companyData", 60, JSON.stringify(companyDataResult));
 
     const positionEligibilityData = await positionEligibilityModel.deleteMany({
       companyId: id,
@@ -499,15 +499,15 @@ companyRoute.delete("/deleteCompany/:id", async (req, res) => {
     if (positionEligibilityData.deletedCount <= 0) {
       logger.info("No related positions found");
     }
-    client.del("positionData", (err, reply) => {
-      if (err) {
-        logger.error("Failed to delete positionData key in Redis", {
-          error: err,
-        });
-      } else {
-        logger.info("Successfully deleted positionData key in Redis");
-      }
-    });
+    // client.del("positionData", (err, reply) => {
+    //   if (err) {
+    //     logger.error("Failed to delete positionData key in Redis", {
+    //       error: err,
+    //     });
+    //   } else {
+    //     logger.info("Successfully deleted positionData key in Redis");
+    //   }
+    // });
     logger.info({
       message: "Delete company and related positions also send to redis",
     });
