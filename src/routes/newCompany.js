@@ -98,7 +98,7 @@ function properName(companyName) {
  *          description: Internet server problem
  */
 
-companyRoute.get("/getCompany", companyCacheData, async (req, res) => {
+companyRoute.get("/getCompany", async (req, res) => {
   try {
     console.log("fetching data from database.......");
     const companyDataResult = await companyData.find({});
@@ -106,7 +106,7 @@ companyRoute.get("/getCompany", companyCacheData, async (req, res) => {
       return res.status(404).send({ message: "No data found" });
     }
 
-    client.setEx("companyData", 60, JSON.stringify(companyDataResult));
+    // client.setEx("companyData", 60, JSON.stringify(companyDataResult));
     logger.info("Set repo getCompany value in Redis");
 
     return res.status(201).send({
@@ -212,7 +212,6 @@ companyRoute.get("/singleCompany", async (req, res) => {
  */
 companyRoute.get(
   "/getParticularCompany/:id",
-  particularCompanyCache,
   async (req, res) => {
     try {
       const { id } = req.params;
@@ -221,7 +220,7 @@ companyRoute.get(
       if (getParticularCompany.length == 0) {
         return res.status(401).send({ message: "check id or data not found" });
       }
-      client.setEx("singleCompany", 60, JSON.stringify(getParticularCompany));
+      // client.setEx("singleCompany", 60, JSON.stringify(getParticularCompany));
       logger.log("info", "Set repo getParticularCompany value in Redis");
 
       return res
