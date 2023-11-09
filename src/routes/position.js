@@ -60,6 +60,7 @@ const {
  *            description: Internet server problem
  *
  */
+
 positionRoute.get("/position", async (req, res) => {
   try {
     console.log("getting position")
